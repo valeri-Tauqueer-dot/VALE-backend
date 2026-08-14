@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from ai_core import vale
@@ -27,6 +28,13 @@ app.add_middleware(
 
 
 # ==========================
+# SECURITY
+# ==========================
+
+security = HTTPBearer()
+
+
+# ==========================
 # DATA MODELS
 # ==========================
 
@@ -50,26 +58,15 @@ class LoginData(BaseModel):
 # ==========================
 
 def get_current_user(
-    authorization: str = Header(None)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
 
-    if authorization is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Authorization header missing."
-        )
-
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token format."
-        )
-
-    token = authorization.replace("Bearer ", "")
+    token = credentials.credentials
 
     username = verify_token(token)
 
     if username is None:
+
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token."
