@@ -99,7 +99,7 @@ class User(Base):
         index=True
     )
 
-    password = Column(
+    password_hash = Column(
         String,
         nullable=False
     )
@@ -153,7 +153,7 @@ def create_user(username, email, password):
 
             email=email,
 
-            password=hashed_password
+            password_hash_=hashed_password
 
         )
 
@@ -200,7 +200,7 @@ def login_user(username, password):
 
             password,
 
-            user.password
+            user.password_hash
 
         )
 
