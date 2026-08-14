@@ -14,7 +14,7 @@ from sqlalchemy.orm import (
     sessionmaker
 )
 
-from passlib.context import CryptContext
+import bcrypt
 
 
 # ==========================
@@ -26,7 +26,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise Exception("DATABASE_URL not found in .env")
+    raise Exception("DATABASE_URL not found in environment")
 
 
 # ==========================
@@ -34,41 +34,20 @@ if not DATABASE_URL:
 # ==========================
 
 engine = create_engine(
-
     DATABASE_URL,
-
     pool_pre_ping=True,
-
     pool_recycle=300
-
 )
 
 
 SessionLocal = sessionmaker(
-
     autocommit=False,
-
     autoflush=False,
-
     bind=engine
-
 )
 
 
 Base = declarative_base()
-
-
-# ==========================
-# PASSWORD HASHING
-# ==========================
-
-pwd_context = CryptContext(
-
-    schemes=["bcrypt"],
-
-    deprecated="auto"
-
-)
 
 
 # ==========================
@@ -105,6 +84,10 @@ class User(Base):
     )
 
 
+# ==========================
+# CREATE TABLE IF NEEDED
+# ==========================
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -117,12 +100,46 @@ def get_db():
     db = SessionLocal()
 
     try:
-
         yield db
 
     finally:
-
         db.close()
+
+
+# ==========================
+# PASSWORD HASHING
+# ==========================
+
+def hash_password(password):
+
+    password_bytes = password.encode("utf-8")
+
+    # bcrypt supports a maximum of 72 bytes
+    if len(password_bytes) > 72:
+        raise ValueError(
+            "Password cannot be longer than 72 bytes."
+        )
+
+    hashed = bcrypt.hashpw(
+        password_bytes,
+        bcrypt.gensalt()
+    )
+
+    return hashed.decode("utf-8")
+
+
+def verify_password(password, password_hash):
+
+    password_bytes = password.encode("utf-8")
+    hash_bytes = password_hash.encode("utf-8")
+
+    if len(password_bytes) > 72:
+        return False
+
+    return bcrypt.checkpw(
+        password_bytes,
+        hash_bytes
+    )
 
 
 # ==========================
@@ -135,26 +152,30 @@ def create_user(username, email, password):
 
     try:
 
-        existing = db.query(User).filter(
-
+        # Check username
+        existing_username = db.query(User).filter(
             User.username == username
-
         ).first()
 
-        if existing:
-
+        if existing_username:
             return False
 
-        hashed_password = pwd_context.hash(password)
+        # Check email
+        existing_email = db.query(User).filter(
+            User.email == email
+        ).first()
 
+        if existing_email:
+            return False
+
+        # Hash password
+        hashed_password = hash_password(password)
+
+        # Create user
         user = User(
-
             username=username,
-
             email=email,
-
-            password_hash_=hashed_password
-
+            password_hash=hashed_password
         )
 
         db.add(user)
@@ -187,21 +208,15 @@ def login_user(username, password):
     try:
 
         user = db.query(User).filter(
-
             User.username == username
-
         ).first()
 
         if not user:
-
             return False
 
-        return pwd_context.verify(
-
+        return verify_password(
             password,
-
             user.password_hash
-
         )
 
     finally:
