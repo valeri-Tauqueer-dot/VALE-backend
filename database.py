@@ -88,7 +88,7 @@ class User(Base):
 # CREATE TABLE IF NEEDED
 # ==========================
 
-Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
 
 
 # ==========================
