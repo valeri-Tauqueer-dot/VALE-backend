@@ -10,558 +10,494 @@ class VALECore:
         self.status = "ONLINE"
 
         self.modules = {
-            "conversation": True,
-            "knowledge": True,
+
             "market": True,
             "strategy": True,
             "risk": True,
             "learning": True,
             "memory": True,
+            "knowledge": True,
+            "conversation": True,
             "chief": True
-        }
-
-        # Basic conversational memory
-        self.memory = []
-
-        # ==========================
-        # BASIC KNOWLEDGE BASE
-        # ==========================
-
-        self.knowledge = {
-
-            "what is ai":
-                "AI means Artificial Intelligence. It refers to computer systems designed to perform tasks that normally require human intelligence, such as understanding language, recognizing patterns, reasoning, and learning.",
-
-            "what is artificial intelligence":
-                "Artificial Intelligence is the field of creating computer systems that can perform tasks involving reasoning, perception, language understanding, decision-making, and learning.",
-
-            "what is machine learning":
-                "Machine learning is a branch of AI where systems learn patterns from data instead of relying only on explicitly programmed rules.",
-
-            "what is trading":
-                "Trading is the buying and selling of financial assets such as stocks, currencies, commodities, or other instruments with the goal of managing risk and potentially generating returns.",
-
-            "what is stock market":
-                "The stock market is a marketplace where shares of publicly traded companies can be bought and sold.",
-
-            "what is risk management":
-                "Risk management is the process of identifying, measuring, and controlling potential losses. In trading, it can include position sizing, stop-loss rules, diversification, and exposure limits.",
-
-            "what is a strategy":
-                "A trading strategy is a defined set of rules or processes used to analyze markets and make trading decisions.",
-
-            "what is data":
-                "Data is information collected for analysis, processing, learning, or decision-making.",
-
-            "what is memory":
-                "Memory allows an AI system to retain selected information so it can use relevant previous context in future interactions.",
-
-            "what is vaIe":
-                "VALE is an AI Trading intelligence platform designed to combine market analysis, strategy research, risk management, learning, and decision-support capabilities."
 
         }
 
 
-    # =========================================================
-    # MAIN AI PROCESSOR
-    # =========================================================
+    # ==========================================
+    # MAIN PROCESSOR
+    # ==========================================
 
     def process(self, message):
 
         original_message = message.strip()
-        text = original_message.lower().strip()
+        message = original_message.lower()
 
-        if not text:
-
-            return "Please enter a message. VALE is ready."
-
-
-        # Store conversation
-        self.memory.append({
-            "user": original_message,
-            "time": datetime.now().strftime("%H:%M:%S")
-        })
+        if not message:
+            return "Please ask me something."
 
 
-        # =====================================================
+        # -------------------------------
         # GREETINGS
-        # =====================================================
+        # -------------------------------
 
-        if self.is_greeting(text):
+        if any(word in message for word in [
+            "hello",
+            "hi",
+            "hey",
+            "good morning",
+            "good afternoon",
+            "good evening"
+        ]):
 
             return self.greet()
 
 
-        # =====================================================
+        # -------------------------------
         # IDENTITY
-        # =====================================================
+        # -------------------------------
 
         if (
-            "who are you" in text
-            or "what are you" in text
-            or "your name" in text
-            or "what is your name" in text
-            or "who is vale" in text
-            or "what is vale" in text
+            "who are you" in message
+            or "what are you" in message
+            or "your name" in message
         ):
 
             return self.identity()
 
 
-        # =====================================================
+        # -------------------------------
         # ORIGIN
-        # =====================================================
+        # -------------------------------
 
         if (
-            "where are you from" in text
-            or "where do you come from" in text
-            or "where were you created" in text
-            or "who created you" in text
-            or "who made you" in text
+            "where are you from" in message
+            or "where are you from?" in message
+            or "where do you live" in message
+            or "where were you created" in message
         ):
 
             return self.origin()
 
 
-        # =====================================================
-        # CAPABILITIES
-        # =====================================================
+        # -------------------------------
+        # WORK / PURPOSE
+        # -------------------------------
 
         if (
-            "what can you do" in text
-            or "what do you do" in text
-            or "your work" in text
-            or "your job" in text
-            or "your capabilities" in text
-            or "your purpose" in text
+            "what is your work" in message
+            or "what do you do" in message
+            or "your work" in message
+            or "what is your purpose" in message
         ):
 
-            return self.capabilities()
+            return self.work()
 
 
-        # =====================================================
-        # HOW ARE YOU
-        # =====================================================
-
-        if (
-            "how are you" in text
-            or "are you okay" in text
-            or "are you online" in text
-        ):
-
-            return (
-                "I am ONLINE and operating normally. "
-                "VALE Intelligence Systems are ready."
-            )
-
-
-        # =====================================================
-        # HELP
-        # =====================================================
-
-        if (
-            text == "help"
-            or "what can i ask" in text
-            or "help me" in text
-        ):
-
-            return self.help()
-
-
-        # =====================================================
+        # -------------------------------
         # STATUS
-        # =====================================================
+        # -------------------------------
 
         if (
-            text == "status"
-            or "system status" in text
-            or "are you working" in text
+            message == "status"
+            or "system status" in message
+            or "are you online" in message
+            or "are you working" in message
         ):
 
             return self.system_status()
 
 
-        # =====================================================
+        # -------------------------------
         # TIME
-        # =====================================================
+        # -------------------------------
 
-        if "time" in text:
+        if "time" in message:
 
             return datetime.now().strftime(
                 "Current Time: %H:%M:%S"
             )
 
 
-        # =====================================================
-        # MARKET
-        # =====================================================
+        # -------------------------------
+        # DATE
+        # -------------------------------
 
         if (
-            "market analysis" in text
-            or "stock market" in text
-            or text == "market"
-            or "market intelligence" in text
+            "what date" in message
+            or "today's date" in message
+            or "todays date" in message
+            or message == "date"
+        ):
+
+            return datetime.now().strftime(
+                "Today's Date: %d %B %Y"
+            )
+
+
+        # -------------------------------
+        # MARKET
+        # -------------------------------
+
+        if (
+            "market" in message
+            or "stock market" in message
         ):
 
             return self.market_ai()
 
 
-        # =====================================================
+        # -------------------------------
         # STRATEGY
-        # =====================================================
+        # -------------------------------
 
         if (
-            "trading strategy" in text
-            or "strategy" in text
-            or "trading plan" in text
+            "strategy" in message
+            or "trading strategy" in message
         ):
 
             return self.strategy_ai()
 
 
-        # =====================================================
+        # -------------------------------
         # RISK
-        # =====================================================
+        # -------------------------------
 
         if (
-            "risk management" in text
-            or "risk" in text
-            or "protect my capital" in text
+            "risk" in message
+            or "risk management" in message
         ):
 
             return self.risk_ai()
 
 
-        # =====================================================
+        # -------------------------------
         # LEARNING
-        # =====================================================
+        # -------------------------------
 
         if (
-            "learning" in text
-            or "learn" in text
-            or "how do you learn" in text
+            "learn" in message
+            or "learning" in message
         ):
 
             return self.learning_ai()
 
 
-        # =====================================================
-        # MEMORY
-        # =====================================================
+        # -------------------------------
+        # GENERAL KNOWLEDGE
+        # -------------------------------
 
-        if (
-            "remember" in text
-            or "memory" in text
-            or "do you remember" in text
-        ):
-
-            return self.memory_response()
-
-
-        # =====================================================
-        # THANK YOU
-        # =====================================================
-
-        if (
-            "thank you" in text
-            or "thanks" in text
-        ):
-
-            return (
-                "You're welcome. VALE is ready for your next command."
-            )
-
-
-        # =====================================================
-        # GOODBYE
-        # =====================================================
-
-        if (
-            text == "bye"
-            or "goodbye" in text
-        ):
-
-            return (
-                "VALE remains online. I'll be ready when you return."
-            )
-
-
-        # =====================================================
-        # KNOWLEDGE ENGINE
-        # =====================================================
-
-        knowledge_answer = self.search_knowledge(text)
+        knowledge_answer = self.general_knowledge(message)
 
         if knowledge_answer:
 
             return knowledge_answer
 
 
-        # =====================================================
-        # SIMPLE CONVERSATION
-        # =====================================================
-
-        if (
-            "good morning" in text
-            or "good afternoon" in text
-            or "good evening" in text
-        ):
-
-            return (
-                "Good to see you. VALE Intelligence Systems are online."
-            )
-
-
-        # =====================================================
+        # -------------------------------
         # CHIEF AI FALLBACK
-        # =====================================================
+        # -------------------------------
 
         return self.chief_ai(original_message)
 
 
-    # =========================================================
-    # GREETING DETECTOR
-    # =========================================================
-
-    def is_greeting(self, text):
-
-        greetings = [
-            "hello",
-            "hi",
-            "hey",
-            "hello vale",
-            "hi vale",
-            "hey vale"
-        ]
-
-        return text in greetings
-
-
-    # =========================================================
+    # ==========================================
     # GREETING
-    # =========================================================
+    # ==========================================
 
     def greet(self):
 
         return (
-            "Hello. I am VALE AI. "
-            "The VALE Intelligence System is online and ready."
+            "Hello! I am VALE AI. "
+            "My intelligence systems are online and ready."
         )
 
 
-    # =========================================================
+    # ==========================================
     # IDENTITY
-    # =========================================================
+    # ==========================================
 
     def identity(self):
 
         return (
-            "I am VALE AI, the intelligence core of the "
-            "VALE Trading System. I am being developed to "
-            "understand information, reason about problems, "
-            "analyze markets, evaluate strategies, manage risk, "
-            "learn from information, and coordinate future "
-            "intelligence modules."
+            "I am VALE AI, an intelligent trading operating system "
+            "designed to understand information, analyze markets, "
+            "develop strategies and assist with intelligent decisions."
         )
 
 
-    # =========================================================
+    # ==========================================
     # ORIGIN
-    # =========================================================
+    # ==========================================
 
     def origin(self):
 
         return (
-            "I am VALE AI, developed as the intelligence core "
-            "of the VALE AI Trading platform."
+            "I am VALE AI, created as part of the VALE AI Trading "
+            "intelligence platform. I run through the VALE backend "
+            "and its intelligence modules."
         )
 
 
-    # =========================================================
-    # CAPABILITIES
-    # =========================================================
+    # ==========================================
+    # WORK
+    # ==========================================
 
-    def capabilities(self):
+    def work(self):
 
         return (
-            "My current foundation includes conversation, "
-            "basic knowledge, market intelligence, strategy "
-            "intelligence, risk management, learning, memory, "
-            "and Chief AI coordination. More advanced reasoning "
-            "and knowledge capabilities can be added to this core."
+            "My purpose is to become an intelligent trading system. "
+            "I am designed to analyze market information, study "
+            "strategies, understand risk, learn from information "
+            "and assist with trading decisions."
         )
 
 
-    # =========================================================
-    # HELP
-    # =========================================================
-
-    def help(self):
-
-        return (
-            "You can ask me about AI, trading, markets, "
-            "strategies, risk management, VALE, my capabilities, "
-            "system status, or general topics contained in my "
-            "current knowledge base."
-        )
-
-
-    # =========================================================
+    # ==========================================
     # SYSTEM STATUS
-    # =========================================================
+    # ==========================================
 
     def system_status(self):
 
-        active_modules = [
-            name
-            for name, enabled in self.modules.items()
-            if enabled
-        ]
+        active_modules = []
+
+        for module, active in self.modules.items():
+
+            if active:
+                active_modules.append(module)
 
         return (
-            f"VALE System Status: {self.status}\n"
+            f"VALE AI Status: {self.status}\n"
             f"Version: {self.version}\n"
             f"Active Modules: {', '.join(active_modules)}"
         )
 
 
-    # =========================================================
+    # ==========================================
     # MARKET AI
-    # =========================================================
+    # ==========================================
 
     def market_ai(self):
 
         return (
-            "Market Intelligence Module is ONLINE. "
-            "The current foundation can support market-related "
-            "reasoning and future real-time market-data analysis."
+            "Market Intelligence Module is online. "
+            "VALE is prepared to analyze market structure, "
+            "price behaviour, trends and market information."
         )
 
 
-    # =========================================================
+    # ==========================================
     # STRATEGY AI
-    # =========================================================
+    # ==========================================
 
     def strategy_ai(self):
 
         return (
-            "Strategy Intelligence Module is ONLINE. "
-            "It is designed for strategy research, evaluation, "
-            "testing, and future strategy evolution."
+            "Strategy Intelligence Module is online. "
+            "VALE can study trading concepts, strategy logic, "
+            "backtesting ideas and decision frameworks."
         )
 
 
-    # =========================================================
+    # ==========================================
     # RISK AI
-    # =========================================================
+    # ==========================================
 
     def risk_ai(self):
 
         return (
-            "Risk Management Module is ONLINE. "
-            "Its purpose is to identify and evaluate trading "
-            "risk before decisions are made."
+            "Risk Management Module is online. "
+            "Risk assessment, position sizing, uncertainty "
+            "and capital protection are core parts of VALE."
         )
 
 
-    # =========================================================
+    # ==========================================
     # LEARNING AI
-    # =========================================================
+    # ==========================================
 
     def learning_ai(self):
 
         return (
-            "Learning Engine is ONLINE. "
-            "The current system provides the foundation for "
-            "future learning and evolution capabilities."
+            "Learning Engine is active. "
+            "The current version uses structured knowledge and "
+            "logic. A more advanced learning architecture will "
+            "be added as VALE evolves."
         )
 
 
-    # =========================================================
-    # MEMORY
-    # =========================================================
+    # ==========================================
+    # BASIC GENERAL KNOWLEDGE
+    # ==========================================
 
-    def memory_response(self):
+    def general_knowledge(self, message):
 
-        count = len(self.memory)
+        # Python
+        if "what is python" in message:
 
-        return (
-            f"VALE conversation memory currently contains "
-            f"{count} message(s) from this session."
-        )
-
-
-    # =========================================================
-    # KNOWLEDGE SEARCH
-    # =========================================================
-
-    def search_knowledge(self, text):
-
-        # Exact/phrase matching
-        for question, answer in self.knowledge.items():
-
-            if question in text:
-
-                return answer
+            return (
+                "Python is a high-level programming language "
+                "widely used for software development, automation, "
+                "data science, artificial intelligence and machine learning."
+            )
 
 
-        # Keyword matching
-        keywords = {
+        # AI
+        if (
+            "what is ai" in message
+            or "what is artificial intelligence" in message
+        ):
 
-            "artificial intelligence":
-                "what is artificial intelligence",
-
-            "machine learning":
-                "what is machine learning",
-
-            "stock":
-                "what is stock market",
-
-            "stocks":
-                "what is stock market",
-
-            "trading":
-                "what is trading",
-
-            "risk":
-                "what is risk management",
-
-            "strategy":
-                "what is a strategy",
-
-            "data":
-                "what is data"
-
-        }
+            return (
+                "Artificial Intelligence, or AI, is technology that "
+                "allows computer systems to perform tasks that normally "
+                "require human intelligence, such as understanding "
+                "language, recognizing patterns and making decisions."
+            )
 
 
-        for keyword, knowledge_key in keywords.items():
+        # Machine Learning
+        if (
+            "what is machine learning" in message
+            or "what is ml" in message
+        ):
 
-            if keyword in text:
+            return (
+                "Machine learning is a branch of AI where computer "
+                "systems learn patterns from data and use those patterns "
+                "to make predictions or decisions."
+            )
 
-                return self.knowledge[knowledge_key]
+
+        # Internet
+        if "what is internet" in message:
+
+            return (
+                "The Internet is a worldwide network of connected "
+                "computer systems that communicate and exchange information."
+            )
+
+
+        # Computer
+        if "what is a computer" in message:
+
+            return (
+                "A computer is an electronic system that processes "
+                "data according to programmed instructions."
+            )
+
+
+        # India
+        if (
+            "capital of india" in message
+            or "what is the capital of india" in message
+        ):
+
+            return "The capital of India is New Delhi."
+
+
+        # Earth
+        if "what is earth" in message:
+
+            return (
+                "Earth is the third planet from the Sun and the only "
+                "planet currently known to support life."
+            )
+
+
+        # Sun
+        if "what is the sun" in message:
+
+            return (
+                "The Sun is a star at the center of our Solar System. "
+                "Its energy provides most of the light and heat received by Earth."
+            )
+
+
+        # Moon
+        if "what is the moon" in message:
+
+            return (
+                "The Moon is Earth's natural satellite and orbits our planet."
+            )
+
+
+        # Trading
+        if (
+            "what is trading" in message
+            or "what is stock trading" in message
+        ):
+
+            return (
+                "Trading involves buying and selling financial assets "
+                "such as stocks, currencies or other instruments with "
+                "the goal of managing risk and potentially generating returns."
+            )
+
+
+        # Stock
+        if "what is a stock" in message:
+
+            return (
+                "A stock represents a unit of ownership in a company. "
+                "When you own shares, you own a small portion of that company."
+            )
+
+
+        # Bitcoin
+        if "what is bitcoin" in message:
+
+            return (
+                "Bitcoin is a decentralized digital asset that uses "
+                "blockchain technology to record transactions."
+            )
+
+
+        # Blockchain
+        if "what is blockchain" in message:
+
+            return (
+                "A blockchain is a distributed digital ledger that "
+                "records transactions in a way designed to be transparent "
+                "and resistant to unauthorized changes."
+            )
+
+
+        # CEO
+        if "what does ceo mean" in message:
+
+            return (
+                "CEO means Chief Executive Officer. "
+                "The CEO is generally responsible for leading and managing a company."
+            )
+
+
+        # Database
+        if "what is database" in message:
+
+            return (
+                "A database is an organized system for storing, "
+                "managing and retrieving information."
+            )
 
 
         return None
 
 
-    # =========================================================
-    # CHIEF AI FALLBACK
-    # =========================================================
+    # ==========================================
+    # CHIEF AI
+    # ==========================================
 
     def chief_ai(self, message):
 
         return (
-            f'I received your request: "{message}". '
-            "I don't have enough knowledge in my current "
-            "knowledge base to give you a reliable answer yet. "
-            "This is an area where the VALE knowledge and "
-            "reasoning system can be expanded."
+            f'I understand that you asked: "{message}".\n\n'
+            "I do not have enough built-in knowledge to answer that "
+            "accurately yet. I will not invent an answer."
         )
 
 
-# =============================================================
-# VALE INSTANCE
-# =============================================================
+# ==============================================
+# VALE CORE INSTANCE
+# ==============================================
 
 vale = VALECore()
