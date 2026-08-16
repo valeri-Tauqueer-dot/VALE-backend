@@ -100,6 +100,7 @@ def health():
         "status": "healthy",
         "system": "VALE AI",
         "database": "connected"
+        
     }
 
 # ==========================
