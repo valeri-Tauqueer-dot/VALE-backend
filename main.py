@@ -102,13 +102,15 @@ def health():
         "database": "connected"
     }
 
-
 # ==========================
 # CHAT
 # ==========================
 
 @app.post("/chat")
-def chat(data: UserMessage):
+def chat(
+    data: UserMessage,
+    username: str = Depends(get_current_user)
+):
 
     response = vale.process(data.message)
 
