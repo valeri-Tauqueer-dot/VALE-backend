@@ -114,40 +114,54 @@ def web_test():
 
 @app.get("/web-search")
 def web_search(q: str):
+    api_key = os.environ.get("EXA_API_KEY")
+
+    if not api_key:
+        return {
+            "success": False,
+            "query": q,
+            "results": [],
+            "count": 0,
+            "message": "EXA_API_KEY is not configured."
+        }
+
     try:
-        response = requests.get(
-            "https://html.duckduckgo.com/html/",
-            params={"q": q},
+        response = requests.post(
+            "https://api.exa.ai/search",
             headers={
-                "User-Agent": "Mozilla/5.0"
+                "Content-Type": "application/json",
+                "x-api-key": api_key
             },
-            timeout=15
+            json={
+                "query": q,
+                "type": "auto",
+                "numResults": 5,
+                "contents": {
+                    "highlights": True
+                }
+            },
+            timeout=20
         )
 
         response.raise_for_status()
 
-        from bs4 import BeautifulSoup
-
-        soup = BeautifulSoup(response.text, "html.parser")
+        data = response.json()
 
         results = []
 
-        for link in soup.select("a.result__a")[:5]:
-            title = link.get_text(" ", strip=True)
-            url = link.get("href")
-
-            if title and url:
-                results.append({
-                    "title": title,
-                    "url": url
-                })
+        for item in data.get("results", []):
+            results.append({
+                "title": item.get("title"),
+                "url": item.get("url"),
+                "highlights": item.get("highlights", [])
+            })
 
         return {
             "success": True,
             "query": q,
             "results": results,
             "count": len(results),
-            "message": "VALE WEB SEARCH PASSED"
+            "message": "VALE EXA WEB SEARCH PASSED"
         }
 
     except Exception as e:
@@ -156,9 +170,9 @@ def web_search(q: str):
             "query": q,
             "results": [],
             "count": 0,
-            "message": "VALE WEB SEARCH FAILED",
+            "message": "VALE EXA WEB SEARCH FAILED",
             "error": str(e)
-        }
+                }
 
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
