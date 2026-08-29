@@ -66,6 +66,27 @@ def api_home():
 def health():
     return {"status": "healthy", "system": "VALE AI", "database": "connected"}
 
+@app.get("/internet-test")
+def internet_test():
+    try:
+        response = requests.get(
+            "https://httpbin.org/get",
+            timeout=10
+        )
+
+        return {
+            "internet": True,
+            "status": response.status_code,
+            "message": "VALE BACKEND INTERNET TEST PASSED"
+        }
+
+    except Exception as e:
+        return {
+            "internet": False,
+            "message": "VALE BACKEND INTERNET TEST FAILED",
+            "error": str(e)
+        }
+
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
     return {"user": data.message, "vale": vale.process(data.message), "username": username}
