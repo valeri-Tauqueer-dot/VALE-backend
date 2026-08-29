@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>VALE Internet Test</title>
+</head>
+<body>
+  <h2>VALE Internet Connection Test</h2>
+  <button onclick="testInternet()">TEST INTERNET</button>
+  <pre id="result">Waiting...</pre>
+
+  <script>
+    async function testInternet() {
+      const result = document.getElementById("result");
+      result.textContent = "Testing...";
+
+      try {
+        const response = await fetch("https://httpbin.org/get", {
+          method: "GET",
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        result.textContent =
+          "INTERNET CONNECTION: ✓ WORKING\n\n" +
+          "Status: " + response.status + "\n" +
+          "Origin: " + data.origin + "\n\n" +
+          "VALE INTERNET TEST PASSED.";
+      } catch (error) {
+        result.textContent =
+          "INTERNET CONNECTION: ✗ FAILED\n\n" +
+          "Error: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
