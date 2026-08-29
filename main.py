@@ -87,6 +87,31 @@ def internet_test():
             "error": str(e)
         }
 
+@app.get("/web-test")
+def web_test():
+    try:
+        response = requests.get(
+            "https://www.google.com/search?q=latest+bitcoin+price",
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            },
+            timeout=10
+        )
+
+        return {
+            "web_access": True,
+            "status": response.status_code,
+            "bytes_received": len(response.content),
+            "message": "VALE WEB ACCESS TEST PASSED"
+        }
+
+    except Exception as e:
+        return {
+            "web_access": False,
+            "message": "VALE WEB ACCESS TEST FAILED",
+            "error": str(e)
+        }
+
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
     return {"user": data.message, "vale": vale.process(data.message), "username": username}
