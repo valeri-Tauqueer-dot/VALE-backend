@@ -1,5 +1,5 @@
 import os
-import request
+import requests
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends
