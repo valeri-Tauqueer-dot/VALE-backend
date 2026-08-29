@@ -233,26 +233,24 @@ def chat(data: UserMessage, username: str = Depends(get_current_user)):
             "username": username
         }
 
-    # VALE General Brain analyzes the message first
+    # VALE Brain analyzes the user's message first
     thinking = brain.think(message)
 
-    # Get VALE's existing built-in intelligence response
-    local_answer = vale.process(message)
-
-    # VALE Brain decides whether internet information is needed
+    # If VALE decides internet research is needed,
+    # search Exa.
     if thinking["needs_internet"]:
 
         web_results = search_exa(message)
 
         if web_results:
 
-            answer = "I searched the internet and found relevant information.\n\n"
+            answer = "I researched this using available web information.\n\n"
 
             for index, result in enumerate(web_results[:3], start=1):
 
                 answer += f"{index}. {result['title']}\n"
 
-                if result.get("highlights"):
+                if result["highlights"]:
                     answer += (
                         result["highlights"][0]
                         .replace("\n", " ")[:700]
@@ -261,7 +259,8 @@ def chat(data: UserMessage, username: str = Depends(get_current_user)):
                 answer += "\n\n"
 
             answer += (
-                "Sources were retrieved through VALE's web intelligence system."
+                "This information was retrieved through "
+                "VALE's web intelligence system."
             )
 
             return {
@@ -273,14 +272,27 @@ def chat(data: UserMessage, username: str = Depends(get_current_user)):
                 "web_results": web_results
             }
 
-    # Internet was not required
+        # Internet was requested but Exa returned nothing
+        return {
+            "user": message,
+            "vale": (
+                "I determined that this question needs current "
+                "or external information, but I could not retrieve "
+                "reliable results right now."
+            ),
+            "username": username,
+            "internet_used": True,
+            "intent": thinking["intent"]
+        }
+
+    # VALE handles greetings and local conversation itself
     return {
         "user": message,
-        "vale": local_answer,
+        "vale": thinking["response"],
         "username": username,
         "internet_used": False,
         "intent": thinking["intent"]
-    }
+            }
             
 @app.post("/signup")
 def signup(data: SignupData):
