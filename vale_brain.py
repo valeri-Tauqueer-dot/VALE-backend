@@ -43,22 +43,26 @@ class VALEBrain:
 
     def needs_internet(self, data, intent):
 
-        internet_words = [
-            "latest",
-            "today",
-            "current",
-            "news",
-            "recent",
-            "price"
-        ]
+    text = data["lower"]
 
-        text = data["lower"]
+    # Normal greetings and simple conversation
+    # should always be handled by VALE itself.
+    if intent == "conversation":
+        return False
 
-        if intent == "current_information":
-            return True
+    # Time-sensitive information should use
+    # internet intelligence.
+    if intent == "current_information":
+        return True
 
-        return any(word in text for word in internet_words)
+    # Questions asking for information that VALE
+    # does not yet have stored locally should be
+    # researched through the internet.
+    if intent in ("definition", "explanation"):
+        return True
 
+    # Default general messages stay inside VALE.
+    return False
     def create_response(self, data, intent):
 
         if intent == "conversation":
