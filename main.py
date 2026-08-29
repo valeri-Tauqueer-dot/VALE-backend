@@ -9,17 +9,33 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from vale_brain import VALEBrain
-from ai_core import vale
 from database import create_user, login_user, Base, engine
 from auth import create_access_token, verify_token
 
 
+# --------------------------------------------------
+# APP SETUP
+# --------------------------------------------------
+
 APP_DIR = Path(__file__).resolve().parent
 FRONTEND_FILE = APP_DIR / "index.html"
 
-app = FastAPI(title="VALE AI Core", version="1.0")
+app = FastAPI(
+    title="VALE AI Core",
+    version="1.0"
+)
+
+
+# --------------------------------------------------
+# VALE BRAIN CONNECTION
+# --------------------------------------------------
+
 brain = VALEBrain()
 
+
+# --------------------------------------------------
+# CORS
+# --------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,8 +46,16 @@ app.add_middleware(
 )
 
 
+# --------------------------------------------------
+# SECURITY
+# --------------------------------------------------
+
 security = HTTPBearer()
 
+
+# --------------------------------------------------
+# DATA MODELS
+# --------------------------------------------------
 
 class UserMessage(BaseModel):
     message: str
@@ -48,15 +72,25 @@ class LoginData(BaseModel):
     password: str
 
 
+# --------------------------------------------------
+# DATABASE STARTUP
+# --------------------------------------------------
+
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
 
 
+# --------------------------------------------------
+# AUTHENTICATION
+# --------------------------------------------------
+
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-    username = verify_token(credentials.credentials)
+    username = verify_token(
+        credentials.credentials
+    )
 
     if username is None:
         raise HTTPException(
@@ -66,6 +100,10 @@ def get_current_user(
 
     return username
 
+
+# --------------------------------------------------
+# FRONTEND
+# --------------------------------------------------
 
 @app.get("/", include_in_schema=False)
 def frontend():
@@ -81,6 +119,10 @@ def frontend():
         media_type="text/html"
     )
 
+
+# --------------------------------------------------
+# SYSTEM API
+# --------------------------------------------------
 
 @app.get("/api")
 def api_home():
@@ -98,9 +140,13 @@ def health():
     return {
         "status": "healthy",
         "system": "VALE AI",
-        "database": "connected"
+        "brain": "connected"
     }
 
+
+# --------------------------------------------------
+# INTERNET TEST
+# --------------------------------------------------
 
 @app.get("/internet-test")
 def internet_test():
@@ -114,45 +160,21 @@ def internet_test():
         return {
             "internet": True,
             "status": response.status_code,
-            "message": "VALE BACKEND INTERNET TEST PASSED"
+            "message": "VALE INTERNET TEST PASSED"
         }
 
-    except Exception as e:
+    except Exception as error:
 
         return {
             "internet": False,
-            "message": "VALE BACKEND INTERNET TEST FAILED",
-            "error": str(e)
+            "message": "VALE INTERNET TEST FAILED",
+            "error": str(error)
         }
 
 
-@app.get("/web-test")
-def web_test():
-
-    try:
-        response = requests.get(
-            "https://www.google.com/search?q=latest+bitcoin+price",
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            },
-            timeout=10
-        )
-
-        return {
-            "web_access": True,
-            "status": response.status_code,
-            "bytes_received": len(response.content),
-            "message": "VALE WEB ACCESS TEST PASSED"
-        }
-
-    except Exception as e:
-
-        return {
-            "web_access": False,
-            "message": "VALE WEB ACCESS TEST FAILED",
-            "error": str(e)
-        }
-
+# --------------------------------------------------
+# EXA WEB SEARCH
+# --------------------------------------------------
 
 def search_exa(query: str, num_results: int = 5):
 
@@ -166,10 +188,12 @@ def search_exa(query: str, num_results: int = 5):
 
         response = requests.post(
             "https://api.exa.ai/search",
+
             headers={
                 "Content-Type": "application/json",
                 "x-api-key": api_key
             },
+
             json={
                 "query": query,
                 "type": "auto",
@@ -178,6 +202,7 @@ def search_exa(query: str, num_results: int = 5):
                     "highlights": True
                 }
             },
+
             timeout=20
         )
 
@@ -185,11 +210,22 @@ def search_exa(query: str, num_results: int = 5):
 
         results = []
 
-        for item in response.json().get("results", []):
+        for item in response.json().get(
+            "results",
+            []
+        ):
 
             results.append({
-                "title": item.get("title", ""),
-                "url": item.get("url", ""),
+                "title": item.get(
+                    "title",
+                    ""
+                ),
+
+                "url": item.get(
+                    "url",
+                    ""
+                ),
+
                 "highlights": item.get(
                     "highlights",
                     []
@@ -198,11 +234,19 @@ def search_exa(query: str, num_results: int = 5):
 
         return results
 
-    except Exception as e:
+    except Exception as error:
 
-        print("EXA SEARCH ERROR:", str(e))
+        print(
+            "EXA SEARCH ERROR:",
+            str(error)
+        )
+
         return []
 
+
+# --------------------------------------------------
+# WEB SEARCH API
+# --------------------------------------------------
 
 @app.get("/web-search")
 def web_search(q: str):
@@ -213,14 +257,13 @@ def web_search(q: str):
         "success": len(results) > 0,
         "query": q,
         "results": results,
-        "count": len(results),
-        "message": (
-            "VALE EXA WEB SEARCH PASSED"
-            if results
-            else "VALE EXA WEB SEARCH FAILED"
-        )
+        "count": len(results)
     }
 
+
+# --------------------------------------------------
+# VALE CHAT
+# --------------------------------------------------
 
 @app.post("/chat")
 def chat(
@@ -239,118 +282,113 @@ def chat(
             "internet_used": False
         }
 
+
+    # ----------------------------------------------
+    # STEP 1
+    # SEND USER MESSAGE TO VALE BRAIN
+    # ----------------------------------------------
+
     thinking = brain.think(message)
+
+
+    # ----------------------------------------------
+    # STEP 2
+    # BRAIN DECIDES IF WEB INFORMATION IS NEEDED
+    # ----------------------------------------------
 
     if thinking.get("needs_internet", False):
 
         web_results = search_exa(message)
 
-        if web_results:
 
-            answer = (
-                "I researched this using VALE's "
-                "web intelligence system.\n\n"
-            )
+        # ------------------------------------------
+        # STEP 3
+        # SEND WEB DATA BACK TO VALE BRAIN
+        # ------------------------------------------
 
-            for index, result in enumerate(
-                web_results[:3],
-                start=1
-            ):
-
-                answer += (
-                    f"{index}. "
-                    f"{result.get('title', 'Source')}\n"
-                )
-
-                highlights = result.get(
-                    "highlights",
-                    []
-                )
-
-                if highlights:
-
-                    answer += (
-                        highlights[0]
-                        .replace("\n", " ")[:700]
-                    )
-
-                answer += "\n\n"
-
-            answer += (
-                "Sources used above were retrieved through "
-                "VALE's web intelligence system."
-            )
-
-            return {
-                "user": message,
-                "vale": answer,
-                "username": username,
-                "internet_used": True,
-                "intent": thinking.get("intent"),
-                "web_results": web_results
-            }
+        final_thinking = brain.think(
+            message,
+            web_results=web_results
+        )
 
         return {
             "user": message,
-            "vale": (
-                "I determined that this question requires "
-                "external information, but I could not retrieve "
-                "reliable results right now."
+            "vale": final_thinking.get(
+                "response",
+                "I could not generate a response."
             ),
             "username": username,
             "internet_used": True,
-            "intent": thinking.get("intent")
+            "intent": final_thinking.get(
+                "intent",
+                "general"
+            )
         }
 
-    local_answer = thinking.get("response")
 
-    if not local_answer:
-
-        try:
-            local_answer = vale.process(message)
-
-        except Exception:
-            local_answer = "I am analyzing your question."
+    # ----------------------------------------------
+    # STEP 4
+    # LOCAL BRAIN RESPONSE
+    # ----------------------------------------------
 
     return {
         "user": message,
-        "vale": local_answer,
+        "vale": thinking.get(
+            "response",
+            "I am analyzing your question."
+        ),
         "username": username,
-        "internet_used": False,
-        "intent": thinking.get("intent")
+        "internet_used": thinking.get(
+            "internet_used",
+            False
+        ),
+        "intent": thinking.get(
+            "intent",
+            "general"
+        )
     }
 
+
+# --------------------------------------------------
+# SIGNUP
+# --------------------------------------------------
 
 @app.post("/signup")
 def signup(data: SignupData):
 
     try:
+
         success = create_user(
             data.username,
             data.email,
             data.password
         )
 
-    except ValueError as exc:
+    except ValueError as error:
+
         raise HTTPException(
             status_code=400,
-            detail=str(exc)
-        ) from exc
+            detail=str(error)
+        )
+
 
     if not success:
 
         return {
             "success": False,
-            "message": (
-                "Username or email already exists."
-            )
+            "message": "Username or email already exists."
         }
+
 
     return {
         "success": True,
         "message": "Account created successfully."
     }
 
+
+# --------------------------------------------------
+# LOGIN
+# --------------------------------------------------
 
 @app.post("/login")
 def login(data: LoginData):
@@ -365,9 +403,11 @@ def login(data: LoginData):
             "message": "Invalid username or password."
         }
 
+
     token = create_access_token({
         "sub": data.username
     })
+
 
     return {
         "success": True,
@@ -376,13 +416,19 @@ def login(data: LoginData):
     }
 
 
+# --------------------------------------------------
+# USER PROFILE
+# --------------------------------------------------
+
 @app.get("/profile")
 def profile(
-    username: str = Depends(get_current_user)
+    username: str = Depends(
+        get_current_user
+    )
 ):
 
     return {
         "username": username,
         "status": "Authenticated",
         "system": "VALE AI"
-    }
+            }
