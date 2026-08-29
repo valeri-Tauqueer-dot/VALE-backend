@@ -2,8 +2,7 @@ import re
 from datetime import datetime
 
 class VALEBrain:
-
-def__init__(self):
+def __init__(self):
     self.name = "VALE"
     self.version = "1.0"
 
