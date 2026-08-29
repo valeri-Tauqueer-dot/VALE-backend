@@ -215,7 +215,7 @@ def search_exa(query: str, num_results: int = 5):
 
     except Exception as e:
         print("EXA SEARCH ERROR:", str(e))
-      return []
+        return []
 
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
