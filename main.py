@@ -174,10 +174,103 @@ def web_search(q: str):
             "error": str(e)
                 }
 
+def search_exa(query: str, num_results: int = 5):
+    api_key = os.environ.get("EXA_API_KEY")
+
+    if not api_key:
+        return []
+
+    try:
+        response = requests.post(
+            "https://api.exa.ai/search",
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key
+            },
+            json={
+                "query": query,
+                "type": "auto",
+                "numResults": num_results,
+                "contents": {
+                    "highlights": True
+                }
+            },
+            timeout=20
+        )
+
+        response.raise_for_status()
+
+        results = []
+
+        for item in response.json().get("results", []):
+            highlights = item.get("highlights", [])
+
+            results.append({
+                "title": item.get("title", ""),
+                "url": item.get("url", ""),
+                "highlights": highlights
+            })
+
+        return results
+
+    except Exception as e:
+        print("EXA SEARCH ERROR:", str(e))
+      return []
+
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
-    return {"user": data.message, "vale": vale.process(data.message), "username": username}
 
+    message = data.message.strip()
+
+    if not message:
+        return {
+            "user": "",
+            "vale": "Please ask me something.",
+            "username": username
+        }
+
+    # First: VALE tries its own built-in intelligence
+    local_answer = vale.process(message)
+
+    # Search the internet for the user's question
+    web_results = search_exa(message)
+
+    # If internet results are available, build a web-informed answer
+    if web_results:
+
+        answer = (
+            "I searched the internet for your question.\n\n"
+        )
+
+        for index, result in enumerate(web_results[:3], start=1):
+
+            answer += f"{index}. {result['title']}\n"
+
+            if result["highlights"]:
+                answer += result["highlights"][0].replace("\n", " ")[:700]
+
+            answer += "\n\n"
+
+        answer += (
+            "Sources used above were retrieved through VALE's web intelligence system."
+        )
+
+        return {
+            "user": message,
+            "vale": answer,
+            "username": username,
+            "internet_used": True,
+            "web_results": web_results
+        }
+
+    # If web search is unavailable, use VALE's original intelligence
+    return {
+        "user": message,
+        "vale": local_answer,
+        "username": username,
+        "internet_used": False
+    }
+            
 @app.post("/signup")
 def signup(data: SignupData):
     try:
