@@ -3,7 +3,7 @@ from datetime import datetime
 
 class VALEBrain:
 
-def __init__(self):
+def__init__(self):
     self.name = "VALE"
     self.version = "1.0"
 
