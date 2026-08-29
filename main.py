@@ -132,20 +132,14 @@ def web_search(q: str):
 
         results = []
 
-        for result in soup.select(".result")[:5]:
-            title_element = result.select_one(".result__title")
-            link_element = result.select_one(".result__a")
-            snippet_element = result.select_one(".result__snippet")
+        for link in soup.select("a.result__a")[:5]:
+            title = link.get_text(" ", strip=True)
+            url = link.get("href")
 
-            if title_element and link_element:
+            if title and url:
                 results.append({
-                    "title": title_element.get_text(" ", strip=True),
-                    "url": link_element.get("href"),
-                    "snippet": (
-                        snippet_element.get_text(" ", strip=True)
-                        if snippet_element
-                        else ""
-                    )
+                    "title": title,
+                    "url": url
                 })
 
         return {
@@ -161,9 +155,10 @@ def web_search(q: str):
             "success": False,
             "query": q,
             "results": [],
+            "count": 0,
             "message": "VALE WEB SEARCH FAILED",
             "error": str(e)
-                }
+        }
 
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
