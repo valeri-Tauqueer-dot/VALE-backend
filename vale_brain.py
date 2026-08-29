@@ -22,8 +22,13 @@ class VALEBrain:
         text = data["lower"]
 
         if any(word in text for word in [
-            "latest", "today", "current",
-            "news", "now", "recent", "price"
+            "latest",
+            "today",
+            "current",
+            "news",
+            "now",
+            "recent",
+            "price"
         ]):
             return "current_information"
 
@@ -35,7 +40,14 @@ class VALEBrain:
         )):
             return "definition"
 
-        if text.startswith(("how", "why")):
+        if text.startswith((
+            "how",
+            "why",
+            "will",
+            "can",
+            "should",
+            "could"
+        )):
             return "explanation"
 
         if text in ("hello", "hi", "hey"):
