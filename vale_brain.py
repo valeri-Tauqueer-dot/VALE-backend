@@ -7,56 +7,32 @@ VALE SYSTEM PROMPT
 
 ============================================================
 
-WRITE YOUR OWN VALE INSTRUCTIONS BELOW.
-
-You can replace everything between the triple quotes.
-
-Example:
-
-You are VALE, an advanced AI.
-
-Your name is VALE.
-
-Always give accurate and intelligent answers.
-
-Help users with trading, markets, coding, strategy and analysis.
-
-You can make this prompt very long.
-
-This is the MAIN PLACE where you can add your instructions.
-
-============================================================
-
 VALE_SYSTEM_PROMPT = """
 WRITE YOUR FULL VALE PROMPT HERE.
 
-THIS IS WHERE YOU ADD YOUR OWN INSTRUCTIONS.
-
-You can write things such as:
+This is the exact place where you can add your own instructions.
 
 You are VALE, an advanced AI intelligence system.
 
 Your name is VALE.
 
-You should be intelligent, accurate and helpful.
+Understand what the user is actually asking.
 
-You should understand what the user actually means.
+Answer the current user message.
 
-You should answer the current question and never give
-an answer about an unrelated previous question.
-
-For market questions, analyze information carefully.
-
-For current information, use reliable external data.
+Do not give unrelated answers.
 
 Do not search the internet for simple greetings.
 
-Do not give random search results.
+Do not search the internet for questions about VALE itself.
 
-Always try to give the user a direct and useful answer.
+For current information, prices, latest news, and live markets,
+use external information when needed.
 
-You can DELETE these example instructions and write
-your own complete prompt here.
+For market questions, analyze carefully and do not claim that
+an uncertain prediction is guaranteed.
+
+Always give clear, useful, and relevant answers.
 """
 
 class VALEBrain:
@@ -64,8 +40,6 @@ class VALEBrain:
 def __init__(self):
     self.name = "VALE"
     self.version = "1.0"
-
-    # This connects your prompt above to the VALE brain.
     self.system_prompt = VALE_SYSTEM_PROMPT
 
     self.owner_response = (
@@ -95,7 +69,7 @@ def detect_intent(self, data):
     if not text:
         return "empty"
 
-    greetings = [
+    greetings = (
         "hello",
         "hi",
         "hey",
@@ -104,12 +78,12 @@ def detect_intent(self, data):
         "good morning",
         "good afternoon",
         "good evening"
-    ]
+    )
 
     if text in greetings:
         return "conversation"
 
-    identity_patterns = [
+    identity_patterns = (
         "what is your name",
         "what's your name",
         "whats your name",
@@ -118,12 +92,12 @@ def detect_intent(self, data):
         "tell me about yourself",
         "what is vale",
         "who is vale"
-    ]
+    )
 
     if any(pattern in text for pattern in identity_patterns):
         return "identity"
 
-    owner_patterns = [
+    owner_patterns = (
         "who is your owner",
         "who's your owner",
         "whos your owner",
@@ -131,12 +105,12 @@ def detect_intent(self, data):
         "who created you",
         "who made you",
         "your creator"
-    ]
+    )
 
     if any(pattern in text for pattern in owner_patterns):
         return "owner"
 
-    market_words = [
+    market_words = (
         "bitcoin",
         "btc",
         "ethereum",
@@ -149,25 +123,23 @@ def detect_intent(self, data):
         "trading",
         "market",
         "share price",
-        "price prediction",
         "bullish",
         "bearish"
-    ]
+    )
 
     if any(word in text for word in market_words):
         return "market"
 
-    current_words = [
+    current_words = (
         "latest",
         "today",
         "current",
         "news",
         "recent",
         "right now",
-        "now",
         "live",
         "currently"
-    ]
+    )
 
     if any(word in text for word in current_words):
         return "current_information"
@@ -193,7 +165,6 @@ def detect_intent(self, data):
 def needs_internet(self, data, intent):
     text = data["lower"]
 
-    # These questions stay inside the VALE brain.
     if intent in (
         "empty",
         "conversation",
@@ -202,11 +173,9 @@ def needs_internet(self, data, intent):
     ):
         return False
 
-    # Market questions need the internet only when
-    # current or live information is requested.
     if intent == "market":
 
-        current_market_words = [
+        current_market_words = (
             "today",
             "now",
             "current",
@@ -217,7 +186,7 @@ def needs_internet(self, data, intent):
             "go down",
             "up or down",
             "prediction"
-        ]
+        )
 
         if any(
             word in text
@@ -233,8 +202,6 @@ def needs_internet(self, data, intent):
     return False
 
 def create_response(self, data, intent):
-    text = data["lower"]
-
     if intent == "empty":
         return (
             "Please ask me something. "
@@ -280,12 +247,9 @@ def create_response(self, data, intent):
     )
 
 def think(self, message):
-
     understanding = self.understand(message)
 
-    intent = self.detect_intent(
-        understanding
-    )
+    intent = self.detect_intent(understanding)
 
     internet_needed = self.needs_internet(
         understanding,
@@ -305,4 +269,4 @@ def think(self, message):
         "timestamp": datetime.now(
             timezone.utc
         ).isoformat()
-}
+    }
