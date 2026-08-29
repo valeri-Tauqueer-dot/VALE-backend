@@ -1,263 +1,308 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
+============================================================
+
+VALE SYSTEM PROMPT
+
+============================================================
+
+WRITE YOUR OWN VALE INSTRUCTIONS BELOW.
+
+You can replace everything between the triple quotes.
+
+Example:
+
+You are VALE, an advanced AI.
+
+Your name is VALE.
+
+Always give accurate and intelligent answers.
+
+Help users with trading, markets, coding, strategy and analysis.
+
+You can make this prompt very long.
+
+This is the MAIN PLACE where you can add your instructions.
+
+============================================================
+
+VALE_SYSTEM_PROMPT = """
+WRITE YOUR FULL VALE PROMPT HERE.
+
+THIS IS WHERE YOU ADD YOUR OWN INSTRUCTIONS.
+
+You can write things such as:
+
+You are VALE, an advanced AI intelligence system.
+
+Your name is VALE.
+
+You should be intelligent, accurate and helpful.
+
+You should understand what the user actually means.
+
+You should answer the current question and never give
+an answer about an unrelated previous question.
+
+For market questions, analyze information carefully.
+
+For current information, use reliable external data.
+
+Do not search the internet for simple greetings.
+
+Do not give random search results.
+
+Always try to give the user a direct and useful answer.
+
+You can DELETE these example instructions and write
+your own complete prompt here.
+"""
 
 class VALEBrain:
-    """
-    VALE's central intelligence layer.
 
-    Future reasoning, knowledge, market analysis, memory,
-    strategy logic, risk analysis, and other intelligence
-    can be added here without changing the basic connector
-    in main.py.
-    """
+def __init__(self):
+    self.name = "VALE"
+    self.version = "1.0"
 
-    def __init__(self):
-        self.name = "VALE"
-        self.version = "1.0"
+    # This connects your prompt above to the VALE brain.
+    self.system_prompt = VALE_SYSTEM_PROMPT
 
-    def understand(self, message):
-        text = str(message).strip()
-        lower = text.lower()
+    self.owner_response = (
+        "VALE is an AI intelligence system created and configured "
+        "by its developer."
+    )
 
-        return {
-            "original": text,
-            "lower": lower,
-            "words": re.findall(r"\b\w+\b", lower)
-        }
+def understand(self, message):
+    text = str(message).strip()
+    lower = text.lower()
 
-    def detect_intent(self, data):
-        text = data["lower"]
+    words = re.findall(
+        r"\b[\w'-]+\b",
+        lower
+    )
 
-        # Normal conversation
-        greetings = [
-            "hello",
-            "hi",
-            "hey",
-            "good morning",
-            "good afternoon",
-            "good evening"
-        ]
+    return {
+        "original": text,
+        "lower": lower,
+        "words": words,
+        "length": len(text)
+    }
 
-        if text in greetings:
-            return "conversation"
+def detect_intent(self, data):
+    text = data["lower"]
 
-        # VALE identity
-        if any(phrase in text for phrase in [
-            "your name",
-            "ur name",
-            "what is your name",
-            "who are you",
-            "what are you"
-        ]):
-            return "identity"
+    if not text:
+        return "empty"
 
-        # Owner / creator
-        if any(phrase in text for phrase in [
-            "your owner",
-            "ur owner",
-            "who owns you",
-            "who created you",
-            "your creator"
-        ]):
-            return "owner"
+    greetings = [
+        "hello",
+        "hi",
+        "hey",
+        "hii",
+        "helo",
+        "good morning",
+        "good afternoon",
+        "good evening"
+    ]
 
-        # Current or changing information
-        if any(word in text for word in [
-            "latest",
+    if text in greetings:
+        return "conversation"
+
+    identity_patterns = [
+        "what is your name",
+        "what's your name",
+        "whats your name",
+        "who are you",
+        "what are you",
+        "tell me about yourself",
+        "what is vale",
+        "who is vale"
+    ]
+
+    if any(pattern in text for pattern in identity_patterns):
+        return "identity"
+
+    owner_patterns = [
+        "who is your owner",
+        "who's your owner",
+        "whos your owner",
+        "who owns you",
+        "who created you",
+        "who made you",
+        "your creator"
+    ]
+
+    if any(pattern in text for pattern in owner_patterns):
+        return "owner"
+
+    market_words = [
+        "bitcoin",
+        "btc",
+        "ethereum",
+        "eth",
+        "crypto",
+        "cryptocurrency",
+        "stock",
+        "stocks",
+        "forex",
+        "trading",
+        "market",
+        "share price",
+        "price prediction",
+        "bullish",
+        "bearish"
+    ]
+
+    if any(word in text for word in market_words):
+        return "market"
+
+    current_words = [
+        "latest",
+        "today",
+        "current",
+        "news",
+        "recent",
+        "right now",
+        "now",
+        "live",
+        "currently"
+    ]
+
+    if any(word in text for word in current_words):
+        return "current_information"
+
+    if text.startswith((
+        "what is ",
+        "what are ",
+        "who is ",
+        "who are "
+    )):
+        return "definition"
+
+    if text.startswith((
+        "how ",
+        "why ",
+        "explain ",
+        "tell me how"
+    )):
+        return "explanation"
+
+    return "general"
+
+def needs_internet(self, data, intent):
+    text = data["lower"]
+
+    # These questions stay inside the VALE brain.
+    if intent in (
+        "empty",
+        "conversation",
+        "identity",
+        "owner"
+    ):
+        return False
+
+    # Market questions need the internet only when
+    # current or live information is requested.
+    if intent == "market":
+
+        current_market_words = [
             "today",
+            "now",
             "current",
-            "news",
-            "recent",
+            "latest",
             "live",
             "price",
-            "market price"
-        ]):
-            return "current_information"
+            "go up",
+            "go down",
+            "up or down",
+            "prediction"
+        ]
 
-        # Cryptocurrency / market questions
-        if any(word in text for word in [
-            "bitcoin",
-            "btc",
-            "crypto",
-            "ethereum",
-            "eth",
-            "stock",
-            "market",
-            "forex",
-            "trading"
-        ]):
-            return "market_analysis"
-
-        # Questions
-        if text.startswith((
-            "what is",
-            "what are",
-            "who is",
-            "who are"
-        )):
-            return "definition"
-
-        if text.startswith((
-            "how",
-            "why",
-            "when",
-            "where",
-            "will",
-            "can",
-            "should"
-        )):
-            return "explanation"
-
-        return "general"
-
-    def needs_internet(self, data, intent):
-        """
-        Decides whether external information is useful.
-        """
-
-        if intent in (
-            "conversation",
-            "identity",
-            "owner"
-        ):
-            return False
-
-        if intent in (
-            "current_information",
-            "market_analysis",
-            "definition",
-            "explanation"
+        if any(
+            word in text
+            for word in current_market_words
         ):
             return True
 
         return False
 
-    def create_local_response(self, data, intent):
-        """
-        Handles information VALE already knows locally.
-        """
+    if intent == "current_information":
+        return True
 
-        if intent == "conversation":
-            return (
-                "Hello. I am VALE, your AI trading intelligence system. "
-                "I am online and ready to help."
-            )
+    return False
 
-        if intent == "identity":
-            return (
-                "My name is VALE. I am an AI intelligence system "
-                "designed for market analysis, strategy, risk awareness "
-                "and intelligent decision-making."
-            )
+def create_response(self, data, intent):
+    text = data["lower"]
 
-        if intent == "owner":
-            return (
-                "I am VALE, a custom AI intelligence system. "
-                "My purpose is to provide intelligent market, strategy "
-                "and risk analysis."
-            )
-
-        if intent == "general":
-            return (
-                "I understand your message. "
-                "I am analyzing it and preparing the best response."
-            )
-
+    if intent == "empty":
         return (
-            "I understand your question and I am analyzing it."
+            "Please ask me something. "
+            "I am VALE and I am ready to help."
         )
 
-    def process_web_results(self, data, intent, results):
-        """
-        Converts web search results into a response.
-
-        Future versions can replace this simple method with
-        advanced reasoning and source analysis.
-        """
-
-        if not results:
-            return (
-                "I could not retrieve reliable external information "
-                "for that question right now."
-            )
-
-        question = data["original"]
-
-        response = (
-            f"I researched your question: {question}\n\n"
+    if intent == "conversation":
+        return (
+            "Hello. I am VALE. "
+            "How can I help you?"
         )
 
-        response += "Here is the information I found:\n\n"
-
-        for index, result in enumerate(results[:3], start=1):
-            title = result.get("title", "Source")
-            highlights = result.get("highlights", [])
-
-            response += f"{index}. {title}\n"
-
-            if highlights:
-                text = str(highlights[0]).replace("\n", " ").strip()
-                response += text[:600]
-
-            response += "\n\n"
-
-        response += (
-            "This information was retrieved through VALE's "
-            "web intelligence system."
+    if intent == "identity":
+        return (
+            "My name is VALE. "
+            "I am an AI intelligence system designed "
+            "to analyze information and help users."
         )
 
-        return response
+    if intent == "owner":
+        return self.owner_response
 
-    def think(self, message, web_results=None):
-        """
-        Main permanent interface used by main.py.
-
-        main.py only needs to call:
-
-            brain.think(message)
-
-        or, after web search:
-
-            brain.think(message, web_results=results)
-        """
-
-        understanding = self.understand(message)
-
-        intent = self.detect_intent(understanding)
-
-        internet_needed = self.needs_internet(
-            understanding,
-            intent
+    if intent == "market":
+        return (
+            "I understand this is a market-related question. "
+            "I will analyze the available information carefully."
         )
 
-        # If main.py has already supplied web results,
-        # let the brain process them.
-        if web_results is not None:
-            response = self.process_web_results(
-                understanding,
-                intent,
-                web_results
-            )
-
-            return {
-                "response": response,
-                "intent": intent,
-                "needs_internet": internet_needed,
-                "internet_used": True,
-                "timestamp": datetime.utcnow().isoformat()
-            }
-
-        # Local answer
-        response = self.create_local_response(
-            understanding,
-            intent
+    if intent == "definition":
+        return (
+            "I understand your question and will provide "
+            "a clear explanation."
         )
 
-        return {
-            "response": response,
-            "intent": intent,
-            "needs_internet": internet_needed,
-            "internet_used": False,
-            "timestamp": datetime.utcnow().isoformat()
-            }
+    if intent == "explanation":
+        return (
+            "I understand that you want an explanation. "
+            "I will analyze the question carefully."
+        )
+
+    return (
+        "I understand your message and I am analyzing it."
+    )
+
+def think(self, message):
+
+    understanding = self.understand(message)
+
+    intent = self.detect_intent(
+        understanding
+    )
+
+    internet_needed = self.needs_internet(
+        understanding,
+        intent
+    )
+
+    response = self.create_response(
+        understanding,
+        intent
+    )
+
+    return {
+        "intent": intent,
+        "needs_internet": internet_needed,
+        "response": response,
+        "system_prompt": self.system_prompt,
+        "timestamp": datetime.now(
+            timezone.utc
+        ).isoformat()
+}
