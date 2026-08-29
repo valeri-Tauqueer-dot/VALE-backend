@@ -44,15 +44,12 @@ def detect_intent(self, data):
 
 def needs_internet(self, data, intent):
 
-    # Greetings stay local
     if intent == "conversation":
         return False
 
-    # Current or changing information needs internet research
     if intent == "current_information":
         return True
 
-    # Definitions and explanations can use internet research
     if intent in ("definition", "explanation"):
         return True
 
@@ -66,7 +63,7 @@ def create_response(self, data, intent):
     if intent == "definition":
         return (
             "I understand your question. "
-            "I will analyze available information to provide a reliable answer."
+            "I will use available knowledge to provide a reliable answer."
         )
 
     if intent == "explanation":
@@ -98,4 +95,4 @@ def think(self, message):
         "needs_internet": internet_needed,
         "response": response,
         "timestamp": datetime.utcnow().isoformat()
-}
+                    }
