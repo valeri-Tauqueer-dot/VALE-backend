@@ -112,6 +112,59 @@ def web_test():
             "error": str(e)
         }
 
+@app.get("/web-search")
+def web_search(q: str):
+    try:
+        response = requests.get(
+            "https://html.duckduckgo.com/html/",
+            params={"q": q},
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            },
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        results = []
+
+        for result in soup.select(".result")[:5]:
+            title_element = result.select_one(".result__title")
+            link_element = result.select_one(".result__a")
+            snippet_element = result.select_one(".result__snippet")
+
+            if title_element and link_element:
+                results.append({
+                    "title": title_element.get_text(" ", strip=True),
+                    "url": link_element.get("href"),
+                    "snippet": (
+                        snippet_element.get_text(" ", strip=True)
+                        if snippet_element
+                        else ""
+                    )
+                })
+
+        return {
+            "success": True,
+            "query": q,
+            "results": results,
+            "count": len(results),
+            "message": "VALE WEB SEARCH PASSED"
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "query": q,
+            "results": [],
+            "message": "VALE WEB SEARCH FAILED",
+            "error": str(e)
+                }
+
 @app.post("/chat")
 def chat(data: UserMessage, username: str = Depends(get_current_user)):
     return {"user": data.message, "vale": vale.process(data.message), "username": username}
