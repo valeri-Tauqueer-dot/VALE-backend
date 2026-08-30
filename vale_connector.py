@@ -1,16 +1,30 @@
 """
 VALE CONNECTOR
 
-Shared connection layer for VALE brains and modules.
+The shared infrastructure gateway for VALE.
 
-This is the first foundation layer.
-Brains will use this connector to access
-shared VALE capabilities.
+Future brains such as:
+- UNITY
+- HEROIC
+- SUPERVISOR
+- ALPHA
+- LEGEND
+- MARCO
+- FEELINGS
+
+can use this connector instead of creating
+their own separate internet/API connections.
+
+The connector does NOT decide what a brain should think.
+
+It only provides controlled access to external
+and shared capabilities.
 """
 
 import os
 import requests
-from typing import Any, Dict, List
+
+from typing import Any, Dict, List, Optional
 
 
 class VALEConnector:
@@ -18,21 +32,49 @@ class VALEConnector:
     def __init__(self):
 
         self.name = "VALE Connector"
-        self.version = "1.0"
+        self.version = "2.0"
+
+        # External services
 
         self.exa_api_url = (
             "https://api.exa.ai/search"
         )
 
     # ============================================================
-    # INTERNET SEARCH
+    # INTERNET
     # ============================================================
 
-    def internet_search(
+    def internet_available(self) -> bool:
+        """
+        Check whether the required internet-search
+        configuration is available.
+        """
+
+        return bool(
+            os.environ.get(
+                "EXA_API_KEY"
+            )
+        )
+
+    # ============================================================
+    # WEB SEARCH
+    # ============================================================
+
+    def search_web(
         self,
         query: str,
         num_results: int = 5
     ) -> List[Dict[str, Any]]:
+        """
+        Search the web through Exa.
+
+        Future brains can request web research
+        through this single gateway.
+        """
+
+        if not query or not query.strip():
+
+            return []
 
         api_key = os.environ.get(
             "EXA_API_KEY"
@@ -44,10 +86,6 @@ class VALEConnector:
                 "VALE CONNECTOR: "
                 "EXA_API_KEY is not configured."
             )
-
-            return []
-
-        if not query or not query.strip():
 
             return []
 
@@ -85,22 +123,35 @@ class VALEConnector:
                 []
             ):
 
+                title = item.get(
+                    "title",
+                    ""
+                )
+
+                url = item.get(
+                    "url",
+                    ""
+                )
+
+                highlights = item.get(
+                    "highlights",
+                    []
+                )
+
+                if not isinstance(
+                    highlights,
+                    list
+                ):
+
+                    highlights = []
+
                 results.append({
 
-                    "title": item.get(
-                        "title",
-                        ""
-                    ),
+                    "title": title,
 
-                    "url": item.get(
-                        "url",
-                        ""
-                    ),
+                    "url": url,
 
-                    "highlights": item.get(
-                        "highlights",
-                        []
-                    ),
+                    "highlights": highlights
                 })
 
             return results
@@ -109,11 +160,73 @@ class VALEConnector:
 
             print(
                 "VALE CONNECTOR "
-                "INTERNET ERROR:",
+                "WEB SEARCH ERROR:",
                 str(error)
             )
 
             return []
+
+    # ============================================================
+    # SIMPLE INTERNET REQUEST
+    # ============================================================
+
+    def get_url(
+        self,
+        url: str,
+        timeout: int = 15
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Make a controlled GET request.
+
+        This will later allow approved VALE modules
+        to access external APIs and websites.
+        """
+
+        if not url or not url.strip():
+
+            return None
+
+        try:
+
+            response = requests.get(
+                url.strip(),
+                timeout=timeout
+            )
+
+            return {
+
+                "success": True,
+
+                "status_code":
+                    response.status_code,
+
+                "url":
+                    response.url,
+
+                "text":
+                    response.text
+            }
+
+        except Exception as error:
+
+            print(
+                "VALE CONNECTOR "
+                "GET ERROR:",
+                str(error)
+            )
+
+            return {
+
+                "success": False,
+
+                "status_code": None,
+
+                "url": url,
+
+                "text": "",
+
+                "error": str(error)
+            }
 
     # ============================================================
     # CONNECTOR STATUS
@@ -122,18 +235,59 @@ class VALEConnector:
     def status(
         self
     ) -> Dict[str, Any]:
+        """
+        Return connector health information.
+        """
 
         return {
 
-            "name": self.name,
+            "name":
+                self.name,
 
-            "version": self.version,
+            "version":
+                self.version,
 
-            "internet_available": bool(
-                os.environ.get(
-                    "EXA_API_KEY"
-                )
-            )
+            "internet_available":
+                self.internet_available(),
+
+            "web_search":
+                True,
+
+            "url_requests":
+                True
+        }
+
+    # ============================================================
+    # CAPABILITIES
+    # ============================================================
+
+    def capabilities(
+        self
+    ) -> Dict[str, bool]:
+        """
+        Tell VALE brains what this connector
+        currently provides.
+        """
+
+        return {
+
+            "internet_search":
+                True,
+
+            "external_url_requests":
+                True,
+
+            "market_data":
+                False,
+
+            "news_data":
+                False,
+
+            "database_access":
+                False,
+
+            "brain_communication":
+                False
         }
 
 
@@ -146,9 +300,13 @@ if __name__ == "__main__":
     connector = VALEConnector()
 
     print(
-        "VALE CONNECTOR STATUS:"
+        "VALE CONNECTOR"
     )
 
     print(
         connector.status()
     )
+
+    print(
+        connector.capabilities()
+            )
