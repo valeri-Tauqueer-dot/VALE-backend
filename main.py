@@ -10,7 +10,15 @@ from pydantic import BaseModel
 
 from vale_brain import VALEBrain
 from vale_connector import VALEConnector
-from vale_brain_interface import VALEBrainInterface
+
+from unity_brain import UnityBrain
+from heroic_brain import HeroicBrain
+from supervisor_brain import SupervisorBrain
+from alpha_brain import AlphaBrain
+from legend_brain import LegendBrain
+from marco_brain import MarcoBrain
+from feelings_brain import FeelingsBrain
+from cognitive_brain import CognitiveBrain
 
 from database import create_user, login_user, Base, engine
 from auth import create_access_token, verify_token
@@ -30,13 +38,60 @@ app = FastAPI(
 
 
 # ============================================================
-# VALE BRAIN CONNECTION
+# SHARED VALE INFRASTRUCTURE
+# ============================================================
+
+connector = VALEConnector()
+
+
+# ============================================================
+# VALE CENTRAL BRAIN
 # ============================================================
 
 brain = VALEBrain()
 
-# Shared VALE infrastructure connector
-connector = VALEConnector()
+
+# ============================================================
+# VALE BRAIN SYSTEM
+#
+# Every brain receives the SAME connector.
+# We are only connecting them right now.
+# Actual intelligence will be added later.
+# ============================================================
+
+unity = UnityBrain(connector)
+
+heroic = HeroicBrain(connector)
+
+supervisor = SupervisorBrain(connector)
+
+alpha = AlphaBrain(connector)
+
+legend = LegendBrain(connector)
+
+marco = MarcoBrain(connector)
+
+feelings = FeelingsBrain(connector)
+
+cognitive = CognitiveBrain(connector)
+
+
+# ============================================================
+# BRAIN REGISTRY
+#
+# Central list of all VALE brains.
+# ============================================================
+
+brains = {
+    "UNITY": unity,
+    "HEROIC": heroic,
+    "SUPERVISOR": supervisor,
+    "ALPHA": alpha,
+    "LEGEND": legend,
+    "MARCO": marco,
+    "FEELINGS": feelings,
+    "COGNITIVE": cognitive,
+}
 
 
 # ============================================================
@@ -145,7 +200,8 @@ def api_home():
     return {
         "system": "VALE AI",
         "status": "Online",
-        "version": "1.0"
+        "version": "1.0",
+        "brains": len(brains)
     }
 
 
@@ -159,7 +215,8 @@ def health():
     return {
         "status": "healthy",
         "system": "VALE AI",
-        "brain": "connected"
+        "brain": "connected",
+        "brains_connected": len(brains)
     }
 
 
@@ -177,21 +234,50 @@ def connector_test():
 
 
 # ============================================================
-# BRAIN INTERFACE TEST
+# BRAIN SYSTEM TEST
 # ============================================================
 
-@app.get("/brain-interface-test")
-def brain_interface_test():
+@app.get("/brains-test")
+def brains_test():
 
-    interface = VALEBrainInterface(
-        "TEST_BRAIN",
-        connector
-    )
+    results = {}
+
+    for name, brain_instance in brains.items():
+
+        results[name] = {
+            "identity": brain_instance.identity(),
+            "connector": brain_instance.connector_status(),
+            "capabilities": brain_instance.capabilities()
+        }
 
     return {
-        "identity": interface.identity(),
-        "connector": interface.connector_status(),
-        "capabilities": interface.capabilities()
+        "total_brains": len(brains),
+        "brains": results
+    }
+
+
+# ============================================================
+# SINGLE BRAIN TEST
+# ============================================================
+
+@app.get("/brain-test/{brain_name}")
+def single_brain_test(brain_name: str):
+
+    name = brain_name.upper()
+
+    if name not in brains:
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"Brain '{brain_name}' not found."
+        )
+
+    brain_instance = brains[name]
+
+    return {
+        "identity": brain_instance.identity(),
+        "connector": brain_instance.connector_status(),
+        "capabilities": brain_instance.capabilities()
     }
 
 
@@ -356,20 +442,10 @@ def chat(
         }
 
 
-    # --------------------------------------------------------
-    # STEP 1
-    # SEND MESSAGE TO VALE BRAIN
-    # --------------------------------------------------------
-
     thinking = brain.think(
         message
     )
 
-
-    # --------------------------------------------------------
-    # STEP 2
-    # CHECK WHETHER INTERNET IS NEEDED
-    # --------------------------------------------------------
 
     if thinking.get(
         "needs_internet",
@@ -380,22 +456,11 @@ def chat(
             message
         )
 
-
-        # ----------------------------------------------------
-        # STEP 3
-        # SEND WEB DATA BACK TO VALE BRAIN
-        # ----------------------------------------------------
-
-        final_thinking = brain.think(
-            message,
-            web_results=web_results
-        )
-
         return {
 
             "user": message,
 
-            "vale": final_thinking.get(
+            "vale": thinking.get(
                 "response",
                 "I could not generate a response."
             ),
@@ -404,17 +469,14 @@ def chat(
 
             "internet_used": True,
 
-            "intent": final_thinking.get(
+            "intent": thinking.get(
                 "intent",
                 "general"
-            )
+            ),
+
+            "brain_system": "connected"
         }
 
-
-    # --------------------------------------------------------
-    # STEP 4
-    # LOCAL BRAIN RESPONSE
-    # --------------------------------------------------------
 
     return {
 
@@ -435,7 +497,9 @@ def chat(
         "intent": thinking.get(
             "intent",
             "general"
-        )
+        ),
+
+        "brain_system": "connected"
     }
 
 
@@ -451,20 +515,15 @@ def signup(
     try:
 
         success = create_user(
-
             data.username,
-
             data.email,
-
             data.password
         )
 
     except ValueError as error:
 
         raise HTTPException(
-
             status_code=400,
-
             detail=str(error)
         )
 
@@ -499,9 +558,7 @@ def login(
 ):
 
     if not login_user(
-
         data.username,
-
         data.password
     ):
 
@@ -548,4 +605,4 @@ def profile(
         "status": "Authenticated",
 
         "system": "VALE AI"
-                }
+}
