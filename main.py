@@ -1,7 +1,6 @@
 import os
 import requests
 from pathlib import Path
-from vale_connector import VALEConnector
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from vale_brain import VALEBrain
+from vale_connector import VALEConnector
 from database import create_user, login_user, Base, engine
 from auth import create_access_token, verify_token
 
@@ -32,6 +32,8 @@ app = FastAPI(
 # --------------------------------------------------
 
 brain = VALEBrain()
+
+# Shared VALE Connector
 connector = VALEConnector()
 
 
@@ -80,7 +82,10 @@ class LoginData(BaseModel):
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
+
+    Base.metadata.create_all(
+        bind=engine
+    )
 
 
 # --------------------------------------------------
@@ -90,11 +95,13 @@ def startup():
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
+
     username = verify_token(
         credentials.credentials
     )
 
     if username is None:
+
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token."
@@ -107,10 +114,14 @@ def get_current_user(
 # FRONTEND
 # --------------------------------------------------
 
-@app.get("/", include_in_schema=False)
+@app.get(
+    "/",
+    include_in_schema=False
+)
 def frontend():
 
     if not FRONTEND_FILE.exists():
+
         raise HTTPException(
             status_code=500,
             detail="Frontend file not found."
@@ -136,6 +147,10 @@ def api_home():
     }
 
 
+# --------------------------------------------------
+# HEALTH
+# --------------------------------------------------
+
 @app.get("/health")
 def health():
 
@@ -144,7 +159,13 @@ def health():
         "system": "VALE AI",
         "brain": "connected"
     }
-    @app.get("/connector-test")
+
+
+# --------------------------------------------------
+# CONNECTOR TEST
+# --------------------------------------------------
+
+@app.get("/connector-test")
 def connector_test():
 
     return {
@@ -160,6 +181,7 @@ def connector_test():
 def internet_test():
 
     try:
+
         response = requests.get(
             "https://httpbin.org/get",
             timeout=10
@@ -184,17 +206,27 @@ def internet_test():
 # EXA WEB SEARCH
 # --------------------------------------------------
 
-def search_exa(query: str, num_results: int = 5):
+def search_exa(
+    query: str,
+    num_results: int = 5
+):
 
-    api_key = os.environ.get("EXA_API_KEY")
+    api_key = os.environ.get(
+        "EXA_API_KEY"
+    )
 
     if not api_key:
-        print("EXA_API_KEY is not configured.")
+
+        print(
+            "EXA_API_KEY is not configured."
+        )
+
         return []
 
     try:
 
         response = requests.post(
+
             "https://api.exa.ai/search",
 
             headers={
@@ -224,6 +256,7 @@ def search_exa(query: str, num_results: int = 5):
         ):
 
             results.append({
+
                 "title": item.get(
                     "title",
                     ""
@@ -262,9 +295,13 @@ def web_search(q: str):
     results = search_exa(q)
 
     return {
+
         "success": len(results) > 0,
+
         "query": q,
+
         "results": results,
+
         "count": len(results)
     }
 
@@ -276,7 +313,9 @@ def web_search(q: str):
 @app.post("/chat")
 def chat(
     data: UserMessage,
-    username: str = Depends(get_current_user)
+    username: str = Depends(
+        get_current_user
+    )
 ):
 
     message = data.message.strip()
@@ -284,9 +323,13 @@ def chat(
     if not message:
 
         return {
+
             "user": "",
+
             "vale": "Please ask me something.",
+
             "username": username,
+
             "internet_used": False
         }
 
@@ -296,7 +339,9 @@ def chat(
     # SEND USER MESSAGE TO VALE BRAIN
     # ----------------------------------------------
 
-    thinking = brain.think(message)
+    thinking = brain.think(
+        message
+    )
 
 
     # ----------------------------------------------
@@ -304,9 +349,14 @@ def chat(
     # BRAIN DECIDES IF WEB INFORMATION IS NEEDED
     # ----------------------------------------------
 
-    if thinking.get("needs_internet", False):
+    if thinking.get(
+        "needs_internet",
+        False
+    ):
 
-        web_results = search_exa(message)
+        web_results = search_exa(
+            message
+        )
 
 
         # ------------------------------------------
@@ -320,13 +370,18 @@ def chat(
         )
 
         return {
+
             "user": message,
+
             "vale": final_thinking.get(
                 "response",
                 "I could not generate a response."
             ),
+
             "username": username,
+
             "internet_used": True,
+
             "intent": final_thinking.get(
                 "intent",
                 "general"
@@ -340,16 +395,21 @@ def chat(
     # ----------------------------------------------
 
     return {
+
         "user": message,
+
         "vale": thinking.get(
             "response",
             "I am analyzing your question."
         ),
+
         "username": username,
+
         "internet_used": thinking.get(
             "internet_used",
             False
         ),
+
         "intent": thinking.get(
             "intent",
             "general"
@@ -362,20 +422,27 @@ def chat(
 # --------------------------------------------------
 
 @app.post("/signup")
-def signup(data: SignupData):
+def signup(
+    data: SignupData
+):
 
     try:
 
         success = create_user(
+
             data.username,
+
             data.email,
+
             data.password
         )
 
     except ValueError as error:
 
         raise HTTPException(
+
             status_code=400,
+
             detail=str(error)
         )
 
@@ -383,14 +450,20 @@ def signup(data: SignupData):
     if not success:
 
         return {
+
             "success": False,
-            "message": "Username or email already exists."
+
+            "message":
+            "Username or email already exists."
         }
 
 
     return {
+
         "success": True,
-        "message": "Account created successfully."
+
+        "message":
+        "Account created successfully."
     }
 
 
@@ -399,27 +472,38 @@ def signup(data: SignupData):
 # --------------------------------------------------
 
 @app.post("/login")
-def login(data: LoginData):
+def login(
+    data: LoginData
+):
 
     if not login_user(
+
         data.username,
+
         data.password
     ):
 
         return {
+
             "success": False,
-            "message": "Invalid username or password."
+
+            "message":
+            "Invalid username or password."
         }
 
 
     token = create_access_token({
+
         "sub": data.username
     })
 
 
     return {
+
         "success": True,
+
         "access_token": token,
+
         "token_type": "bearer"
     }
 
@@ -436,7 +520,10 @@ def profile(
 ):
 
     return {
+
         "username": username,
+
         "status": "Authenticated",
+
         "system": "VALE AI"
-            }
+        }
