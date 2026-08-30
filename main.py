@@ -1,6 +1,7 @@
 import os
 import requests
 from pathlib import Path
+from vale_connector import VALEConnector
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +32,7 @@ app = FastAPI(
 # --------------------------------------------------
 
 brain = VALEBrain()
+connector = VALEConnector()
 
 
 # --------------------------------------------------
@@ -141,6 +143,12 @@ def health():
         "status": "healthy",
         "system": "VALE AI",
         "brain": "connected"
+    }
+    @app.get("/connector-test")
+def connector_test():
+
+    return {
+        "connector": connector.status()
     }
 
 
