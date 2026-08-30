@@ -6,5 +6,6 @@ bcrypt
 python-jose[cryptography]
 python-dotenv
 pydantic
-requests 
+requests
 beautifulsoup4
+python-multipart

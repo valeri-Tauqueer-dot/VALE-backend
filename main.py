@@ -2,7 +2,7 @@ import os
 import requests
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -500,6 +500,89 @@ def chat(
         ),
 
         "brain_system": "connected"
+    }
+
+
+# ============================================================
+# VALE CHAT — MEDIA (camera / photo / file / voice)
+# ============================================================
+
+MAX_MEDIA_BYTES = 8 * 1024 * 1024  # 8MB cap
+
+ALLOWED_MEDIA_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "audio/webm",
+    "audio/mpeg",
+    "audio/wav",
+    "application/pdf",
+}
+
+
+@app.post("/chat-media")
+async def chat_media(
+    file: UploadFile = File(...),
+    username: str = Depends(
+        get_current_user
+    )
+):
+
+    if file.content_type not in ALLOWED_MEDIA_TYPES:
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}"
+        )
+
+    raw = await file.read()
+
+    if len(raw) > MAX_MEDIA_BYTES:
+
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Max size is 8MB."
+        )
+
+    media_kind = "image"
+
+    if file.content_type.startswith("audio/"):
+        media_kind = "voice"
+    elif file.content_type == "application/pdf":
+        media_kind = "document"
+
+    prompt = f"[User sent a {media_kind} attachment: {file.filename}]"
+
+    thinking = brain.think(
+        prompt
+    )
+
+    return {
+
+        "user": prompt,
+
+        "vale": thinking.get(
+            "response",
+            "I received your file and I am reviewing it."
+        ),
+
+        "username": username,
+
+        "internet_used": False,
+
+        "intent": thinking.get(
+            "intent",
+            "general"
+        ),
+
+        "brain_system": "connected",
+
+        "media": {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size_bytes": len(raw),
+            "kind": media_kind
+        }
     }
 
 
