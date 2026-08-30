@@ -169,7 +169,8 @@ def health():
 def connector_test():
 
     return {
-        "connector": connector.status()
+        "connector": connector.status(),
+        "capabilities": connector.capabilities()
     }
 
 
