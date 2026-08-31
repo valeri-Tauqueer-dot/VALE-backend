@@ -1,4 +1,4 @@
-from future import annotations
+from_future_import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -6,16 +6,16 @@ from typing import Any, Dict, List
 from datetime import datetime, timezone
 
 class MediaType(str, Enum):
-IMAGE = "image"
-AUDIO = "audio"
-DOCUMENT = "document"
-TEXT = "text"
-UNKNOWN = "unknown"
+  IMAGE = "image"
+  AUDIO = "audio"
+  DOCUMENT = "document"
+  TEXT = "text"
+  UNKNOWN = "unknown"
 
 class ProcessingStatus(str, Enum):
-SUCCESS = "success"
-PARTIAL = "partial"
-FAILED = "failed"
+  SUCCESS = "success"
+  PARTIAL = "partial"
+  FAILED = "failed"
 
 class MediaError(Exception):
 """Base exception for media processing errors."""
