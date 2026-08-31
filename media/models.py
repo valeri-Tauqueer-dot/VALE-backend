@@ -1,4 +1,4 @@
-from_future_import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
