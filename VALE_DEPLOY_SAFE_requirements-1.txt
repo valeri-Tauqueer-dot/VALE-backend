@@ -1,0 +1,18 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+bcrypt
+python-jose[cryptography]
+python-dotenv
+pydantic
+requests
+beautifulsoup4
+python-multipart
+Pillow>=10.0.0
+pytesseract>=0.3.10
+pypdf>=4.0.0
+python-docx>=1.1.0
+
+# OPTIONAL: install only if server-side voice transcription is required.
+# faster-whisper>=1.0.0
