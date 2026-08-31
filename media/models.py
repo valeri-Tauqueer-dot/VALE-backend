@@ -18,7 +18,7 @@ class ProcessingStatus(str, Enum):
   FAILED = "failed"
 
 class MediaError(Exception):
-"""Base exception for media processing errors."""
+    """Base exception for media processing errors."""
 
 @dataclass
 class MediaResult:
