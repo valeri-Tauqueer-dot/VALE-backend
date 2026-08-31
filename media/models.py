@@ -2,7 +2,7 @@ from future import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime, timezone
 
 class MediaType(str, Enum):
@@ -35,25 +35,16 @@ content_type: str
 
 status: ProcessingStatus = ProcessingStatus.SUCCESS
 
-# Human-readable understanding of the media.
 description: str = ""
-
-# OCR, transcript or extracted document text.
 extracted_text: str = ""
 
-# Structured information extracted from the media.
 structured_data: Dict[str, Any] = field(default_factory=dict)
 
-# Warnings that do not completely stop processing.
 warnings: List[str] = field(default_factory=list)
-
-# Errors encountered during processing.
 errors: List[str] = field(default_factory=list)
 
-# Metadata such as image size, audio duration, page count, etc.
 metadata: Dict[str, Any] = field(default_factory=dict)
 
-# Time of processing.
 processed_at: str = field(
     default_factory=lambda: datetime.now(timezone.utc).isoformat()
 )
@@ -77,9 +68,6 @@ def build_brain_context(
 ) -> str:
     """
     Build a clean context string for VALE and downstream brains.
-
-    The full raw media is NOT passed to text-based brains.
-    Instead they receive the actual extracted understanding.
     """
 
     parts: List[str] = []
@@ -111,20 +99,16 @@ def build_brain_context(
         parts.append("STRUCTURED INFORMATION:")
 
         for key, value in self.structured_data.items():
-            if value is None:
-                continue
-
-            parts.append(f"{key}: {value}")
+            if value is not None:
+                parts.append(f"{key}: {value}")
 
     if self.metadata:
         parts.append("")
         parts.append("MEDIA METADATA:")
 
         for key, value in self.metadata.items():
-            if value is None:
-                continue
-
-            parts.append(f"{key}: {value}")
+            if value is not None:
+                parts.append(f"{key}: {value}")
 
     if self.warnings:
         parts.append("")
