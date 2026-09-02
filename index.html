@@ -5399,7 +5399,17 @@ canvas{
         body: JSON.stringify({ message })
       });
 
-      addChatLine("vale", result?.vale ?? "VALE returned no response.");
+      const valeData = result?.vale;
+
+const valeAnswer =
+    typeof valeData === "string"
+        ? valeData
+        : valeData?.response;
+
+addChatLine(
+    "vale",
+    valeAnswer || "VALE returned no response."
+);
     } catch (error) {
       if (error.status === 401) {
         clearSession();
