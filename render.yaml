@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: vale-ai
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: EXA_API_KEY
+        sync: false
+        # Get this from https://exa.ai — required for VALE to answer
+        # anything, since ai_core.py now answers ONLY from live Exa
+        # web search results. Without this key set, every chat message
+        # will get a clear "internet not configured" reply instead of
+        # a made-up or hardcoded answer.
