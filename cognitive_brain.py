@@ -1479,4 +1479,28 @@ class CognitiveBrain(VALEBrainInterface):
             return {
                 "success": False,
                 "brain": "COGNITIVE",
-        
+                   "received": True,
+            "from": source_brain.upper(),
+            "message_id": cognitive_message.message_id,
+            "task_id": state.task_id,
+        }
+
+    # ========================================================
+    # IDENTITY
+    # ========================================================
+
+    def identity(self) -> Dict[str, Any]:
+        base = super().identity()
+
+        base.update({
+            "system": self.system_name,
+            "version": self.system_version,
+            "role": "SUPPORTING_COGNITIVE_SYSTEM",
+        })
+
+        return base
+
+
+# ============================================================
+# END OF VALE SUPPORTING COGNITIVE SYSTEM FOUNDATION v0.1
+# ============================================================
