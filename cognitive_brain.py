@@ -36,7 +36,7 @@ from brain_state import VALEBrainState
 # ============================================================
 
 COGNITIVE_SYSTEM_NAME = "VALE SUPPORTING COGNITIVE SYSTEM"
-COGNITIVE_SYSTEM_VERSION = "0.1.0"
+COGNITIVE_SYSTEM_VERSION = "0.2.0"
 
 
 def utc_now() -> str:
@@ -96,6 +96,7 @@ class CognitiveContract:
 
 @dataclass
 class CognitiveMessage:
+
     """
     Standard internal message envelope.
 
@@ -112,7 +113,6 @@ class CognitiveMessage:
 
     task_id: str = field(default_factory=lambda: make_id("task"))
     session_id: Optional[str] = None
-
     priority: int = 5
     confidence: Optional[float] = None
 
@@ -417,11 +417,13 @@ class CognitiveStateManager:
         if not isinstance(shared_state, dict):
             raise ValueError("Invalid cognitive state snapshot.")
 
-        current_keys = set(self.state.snapshot_shared().keys())
+        current_keys = set(
+            self.state.snapshot_shared().keys()
+        )
 
         for key in current_keys:
             if key not in shared_state:
-                self.state.delete(key)
+                self.state.set(key, None)
 
         for key, value in shared_state.items():
             self.state.set(key, deepcopy(value))
@@ -435,60 +437,342 @@ class CognitiveStateManager:
 
         return self._version
 
-    def export(self) -> Dict[str, Any]:
-        return {
-            "version": self._version,
-            "task_id": self.state.task_id,
-            "state": self.state.snapshot_shared(),
-        }
-
-    def history(self) -> List[Dict[str, Any]]:
-        return deepcopy(self._snapshots)
-
 
 # ============================================================
-# 7. ROUTING SYSTEM
+# 7. COGNITIVE STATE INTELLIGENCE
 # ============================================================
 
-class CognitiveRouter:
+class CognitiveStateIntelligence:
     """
-    Foundation routing registry.
+    State intelligence layer for the Supporting Cognitive System.
 
-    This is NOT yet the final HEROIC/ALPHA routing engine.
-
-    For now it records explicit capability -> destination
-    relationships so future routing can become intelligent
-    without changing the public API.
+    It tracks:
+        - cognitive system identity
+        - active brains
+        - active capabilities
+        - context
+        - objective
+        - hypotheses
+        - uncertainties
+        - decisions
     """
 
-    def __init__(self):
-        self._routes: Dict[str, List[str]] = {}
+    STATE_KEY = "cognitive_state_intelligence"
 
-    def register_route(
+    def __init__(
         self,
-        capability: str,
-        destination: str,
-    ) -> None:
-        if not capability or not destination:
-            raise ValueError(
-                "capability and destination are required."
+        state: VALEBrainState,
+        state_manager: CognitiveStateManager,
+    ):
+        self.state = state
+        self.state_manager = state_manager
+
+        existing = self.state.get(
+            self.STATE_KEY
+        )
+
+        if not isinstance(existing, dict):
+            existing = {
+                "objective": None,
+                "context": {},
+                "active_brains": [],
+                "active_capabilities": [],
+                "constraints": {},
+                "facts": [],
+                "hypotheses": [],
+                "uncertainties": [],
+                "decisions": [],
+                "pending_questions": [],
+                "last_update": utc_now(),
+            }
+
+            self.state_manager.set(
+                self.STATE_KEY,
+                existing,
             )
 
-        routes = self._routes.setdefault(capability, [])
+    def get_state(self) -> Dict[str, Any]:
+        current = self.state.get(
+            self.STATE_KEY,
+            {},
+        )
 
-        destination = destination.upper()
+        if not isinstance(current, dict):
+            current = {}
 
-        if destination not in routes:
-            routes.append(destination)
+        return deepcopy(current)
 
-    def destinations_for(
+    def update(
         self,
-        capability: str,
-    ) -> List[str]:
-        return list(self._routes.get(capability, []))
+        objective: Optional[str] = None,
+        context: Optional[Dict[str, Any]] = None,
+        active_brains: Optional[List[str]] = None,
+        active_capabilities: Optional[List[str]] = None,
+        constraints: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
 
-    def export(self) -> Dict[str, List[str]]:
-        return deepcopy(self._routes)
+        current = self.get_state()
+
+        if objective is not None:
+            current["objective"] = str(objective)
+
+        if context is not None:
+            current["context"].update(
+                deepcopy(context)
+            )
+
+        if active_brains is not None:
+            current["active_brains"] = sorted(
+                {
+                    str(brain).upper()
+                    for brain in active_brains
+                }
+            )
+
+        if active_capabilities is not None:
+            current["active_capabilities"] = sorted(
+                {
+                    str(capability)
+                    for capability in active_capabilities
+                }
+            )
+
+        if constraints is not None:
+            current["constraints"] = deepcopy(
+                constraints
+            )
+
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        self.state.event(
+            "cognitive_state_updated",
+            "COGNITIVE",
+            payload={
+                "state_version": self.state_manager.version,
+                "objective": current["objective"],
+            },
+        )
+
+        return deepcopy(current)
+
+    def add_fact(
+        self,
+        fact: Any,
+        source: str = "COGNITIVE",
+    ) -> Dict[str, Any]:
+
+        current = self.get_state()
+
+        item = {
+            "fact_id": make_id("fact"),
+            "content": deepcopy(fact),
+            "source": str(source).upper(),
+            "timestamp": utc_now(),
+        }
+
+        current["facts"].append(item)
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        return item
+
+    def add_hypothesis(
+        self,
+        hypothesis: Any,
+        confidence: float = 0.0,
+        source: str = "COGNITIVE",
+    ) -> Dict[str, Any]:
+
+        confidence = max(
+            0.0,
+            min(1.0, float(confidence)),
+        )
+
+        current = self.get_state()
+
+        item = {
+            "hypothesis_id": make_id("hypothesis"),
+            "content": deepcopy(hypothesis),
+            "confidence": confidence,
+            "source": str(source).upper(),
+            "status": "ACTIVE",
+            "timestamp": utc_now(),
+        }
+
+        current["hypotheses"].append(item)
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        return item
+
+    def add_uncertainty(
+        self,
+        subject: Any,
+        reason: str,
+        severity: str = "MEDIUM",
+    ) -> Dict[str, Any]:
+
+        severity = str(severity).upper()
+
+        allowed = {
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL",
+        }
+
+        if severity not in allowed:
+            severity = "MEDIUM"
+
+        current = self.get_state()
+
+        item = {
+            "uncertainty_id": make_id("uncertainty"),
+            "subject": deepcopy(subject),
+            "reason": str(reason),
+            "severity": severity,
+            "status": "OPEN",
+            "timestamp": utc_now(),
+        }
+
+        current["uncertainties"].append(item)
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        return item
+
+    def add_decision(
+        self,
+        decision: Any,
+        basis: Optional[List[Any]] = None,
+        confidence: float = 0.0,
+    ) -> Dict[str, Any]:
+
+        confidence = max(
+            0.0,
+            min(1.0, float(confidence)),
+        )
+
+        current = self.get_state()
+
+        item = {
+            "decision_id": make_id("decision"),
+            "decision": deepcopy(decision),
+            "basis": deepcopy(basis or []),
+            "confidence": confidence,
+            "status": "PROPOSED",
+            "timestamp": utc_now(),
+        }
+
+        current["decisions"].append(item)
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        return item
+
+    def add_question(
+        self,
+        question: str,
+        priority: int = 5,
+    ) -> Dict[str, Any]:
+
+        priority = max(
+            0,
+            min(10, int(priority)),
+        )
+
+        current = self.get_state()
+
+        item = {
+            "question_id": make_id("question"),
+            "question": str(question),
+            "priority": priority,
+            "status": "OPEN",
+            "timestamp": utc_now(),
+        }
+
+        current["pending_questions"].append(item)
+        current["last_update"] = utc_now()
+
+        self.state_manager.set(
+            self.STATE_KEY,
+            current,
+        )
+
+        return item
+
+    def snapshot(self) -> Dict[str, Any]:
+        snapshot = {
+            "snapshot_id": make_id("cognitive_state"),
+            "state_version": self.state_manager.version,
+            "timestamp": utc_now(),
+            "state": self.get_state(),
+        }
+
+        self.state_manager.snapshot()
+
+        return snapshot
+
+    def summary(self) -> Dict[str, Any]:
+        current = self.get_state()
+
+        return {
+            "objective": current["objective"],
+            "active_brains": list(
+                current["active_brains"]
+            ),
+            "active_capabilities": list(
+                current["active_capabilities"]
+            ),
+            "facts": len(current["facts"]),
+            "hypotheses": len(
+                current["hypotheses"]
+            ),
+            "open_uncertainties": len(
+                [
+                    item
+                    for item in current["uncertainties"]
+                    if item.get("status") == "OPEN"
+                ]
+            ),
+            "proposed_decisions": len(
+                [
+                    item
+                    for item in current["decisions"]
+                    if item.get("status") == "PROPOSED"
+                ]
+            ),
+            "pending_questions": len(
+                [
+                    item
+                    for item in current["pending_questions"]
+                    if item.get("status") == "OPEN"
+                ]
+            ),
+            "state_version": self.state_manager.version,
+            "last_update": current["last_update"],
+        }
 
 
 # ============================================================
@@ -510,7 +794,10 @@ class CognitiveMemoryFoundation:
         self.state = state
 
         if self.state.get("cognitive_working_memory") is None:
-            self.state.set("cognitive_working_memory", [])
+            self.state.set(
+                "cognitive_working_memory",
+                [],
+            )
 
     def add(
         self,
@@ -518,7 +805,11 @@ class CognitiveMemoryFoundation:
         importance: float = 0.5,
         source: str = "COGNITIVE",
     ) -> Dict[str, Any]:
-        importance = max(0.0, min(1.0, float(importance)))
+
+        importance = max(
+            0.0,
+            min(1.0, float(importance)),
+        )
 
         item = {
             "memory_id": make_id("wm"),
@@ -537,11 +828,19 @@ class CognitiveMemoryFoundation:
             memory = []
 
         memory.append(item)
-        self.state.set("cognitive_working_memory", memory)
+
+        self.state.set(
+            "cognitive_working_memory",
+            memory,
+        )
 
         return item
 
-    def recent(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def recent(
+        self,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+
         memory = self.state.get(
             "cognitive_working_memory",
             [],
@@ -550,7 +849,9 @@ class CognitiveMemoryFoundation:
         if not isinstance(memory, list):
             return []
 
-        return deepcopy(memory[-max(1, int(limit)):])
+        return deepcopy(
+            memory[-max(1, int(limit)):]
+        )
 
     def clear(self) -> None:
         self.state.set(
@@ -574,8 +875,13 @@ class CognitiveKnowledgeFoundation:
     def __init__(self, state: VALEBrainState):
         self.state = state
 
-        if self.state.get("cognitive_knowledge_claims") is None:
-            self.state.set("cognitive_knowledge_claims", [])
+        if self.state.get(
+            "cognitive_knowledge_claims"
+        ) is None:
+            self.state.set(
+                "cognitive_knowledge_claims",
+                [],
+            )
 
     def add_claim(
         self,
@@ -585,7 +891,10 @@ class CognitiveKnowledgeFoundation:
         source: Optional[str] = None,
     ) -> Dict[str, Any]:
 
-        confidence = max(0.0, min(1.0, float(confidence)))
+        confidence = max(
+            0.0,
+            min(1.0, float(confidence)),
+        )
 
         item = {
             "claim_id": make_id("claim"),
@@ -863,6 +1172,12 @@ class CognitiveInfrastructureRegistry:
         self.router = CognitiveRouter()
 
         self.state_manager = CognitiveStateManager(state)
+
+        self.state_intelligence = CognitiveStateIntelligence(
+            state,
+            self.state_manager,
+        )
+
         self.memory = CognitiveMemoryFoundation(state)
         self.knowledge = CognitiveKnowledgeFoundation(state)
         self.reasoning = CognitiveReasoningFoundation(state)
@@ -901,6 +1216,30 @@ class CognitiveInfrastructureRegistry:
                 ],
                 limitations=[
                     "task_local_foundation",
+                ],
+            ),
+            CognitiveContract(
+                component_id="COGNITIVE_STATE_INTELLIGENCE",
+                component_type="supporting_cognitive_intelligence",
+                capabilities=[
+                    "cognitive_state_tracking",
+                    "objective_tracking",
+                    "context_tracking",
+                    "brain_activity_tracking",
+                    "hypothesis_tracking",
+                    "uncertainty_tracking",
+                    "decision_tracking",
+                    "state_snapshot",
+                ],
+                guarantees=[
+                    "uses_existing_vale_brain_state",
+                    "task_local_state",
+                    "traceable_state_updates",
+                ],
+                limitations=[
+                    "not_a_decision_brain",
+                    "not_a_reasoning_engine",
+                    "not_an_autonomous_controller",
                 ],
             ),
             CognitiveContract(
@@ -1023,6 +1362,25 @@ class CognitiveBrain(VALEBrainInterface):
             True,
         )
 
+        state_intelligence = (
+            infrastructure.state_intelligence
+        )
+
+        state_intelligence.update(
+            context={
+                "cognitive_system": self.system_name,
+                "cognitive_version": self.system_version,
+            },
+            active_brains=[
+                "COGNITIVE",
+            ],
+            active_capabilities=[
+                "cognitive_state_tracking",
+                "objective_tracking",
+                "context_tracking",
+            ],
+        )
+
         state.set(
             "cognitive_system_status",
             "FOUNDATION_READY",
@@ -1053,6 +1411,9 @@ class CognitiveBrain(VALEBrainInterface):
             "task_id": state.task_id,
             "state_version": (
                 infrastructure.state_manager.version
+            ),
+            "state_intelligence": (
+                infrastructure.state_intelligence.summary()
             ),
             "components": (
                 infrastructure.fabric.list_components()
@@ -1118,41 +1479,4 @@ class CognitiveBrain(VALEBrainInterface):
             return {
                 "success": False,
                 "brain": "COGNITIVE",
-                "error": safety_result["reason"],
-            }
-
-        state.event(
-            "cognitive_message_received",
-            "COGNITIVE",
-            target=source_brain.upper(),
-            payload=cognitive_message.to_dict(),
-        )
-
-        return {
-            "success": True,
-            "brain": "COGNITIVE",
-            "received": True,
-            "from": source_brain.upper(),
-            "message_id": cognitive_message.message_id,
-            "task_id": state.task_id,
-        }
-
-    # ========================================================
-    # IDENTITY
-    # ========================================================
-
-    def identity(self) -> Dict[str, Any]:
-        base = super().identity()
-
-        base.update({
-            "system": self.system_name,
-            "version": self.system_version,
-            "role": "SUPPORTING_COGNITIVE_SYSTEM",
-        })
-
-        return base
-
-
-# ============================================================
-# END OF VALE SUPPORTING COGNITIVE SYSTEM FOUNDATION v0.1
-# ============================================================
+        
