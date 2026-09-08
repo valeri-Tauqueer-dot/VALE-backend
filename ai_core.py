@@ -9,17 +9,15 @@ verify, rank and synthesize the same evidence without changing the API gateway.
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from vale_connector import VALEConnector
-from brain_network import BrainNetwork
-from cognitive_brain import CognitiveBrain
-from legend_brain import LegendBrain
-from alpha_brain import AlphaBrain
-from marco_brain import MarcoBrain
-from feelings_brain import FeelingsBrain
-from heroic_brain import HeroicBrain
-from supervisor_brain import SupervisorBrain
-from unity_brain import UnityBrain
-from ai_osgeneration import AiOsGenerationBrain
+from COGNITIVE.cognitive_brain import CognitiveBrain
+from LEGEND.legend_brain import LegendBrain
+from ALPHA.alpha_brain import AlphaBrain
+from MARCO.marco_brain import MarcoBrain
+from FEEL.feelings_brain import FeelingsBrain
+from HEROIC.heroic_brain import HeroicBrain
+from SUPERVISOR.supervisor_brain import SupervisorBrain
+from UNITY.unity_brain import UnityBrain
+from AI_OS.ai_osgeneration import AiOsGenerationBrain
 
 
 class VALECore:
