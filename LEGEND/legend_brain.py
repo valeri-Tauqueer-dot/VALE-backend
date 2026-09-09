@@ -24,6 +24,7 @@ from uuid import uuid4
 from vale_connector import VALEConnector
 from vale_brain_interface import VALEBrainInterface
 
+from LEGEND.MARKET_DATA import MarketDataIntelligence
 
 def utc_now() -> str:
     """Return a timezone-aware UTC timestamp."""
@@ -58,7 +59,8 @@ class LegendBrain(VALEBrainInterface):
             brain_name="LEGEND",
             connector=connector,
         )
-
+        self.market_data_intelligence = MarketDataIntelligence()
+        
         self.identity_profile = {
             "brain": "LEGEND",
             "role": "Market and Trading Intelligence",
