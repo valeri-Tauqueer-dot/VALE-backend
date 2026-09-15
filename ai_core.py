@@ -320,7 +320,6 @@ class VALECore:
                     original_message,
                     internet_results,
                 )
-            )
 
             if state is not None:
 
