@@ -1,5 +1,7 @@
 """
-VALE ALPHA core models and contracts.
+VALE ALPHA Core
+
+Foundational execution models and runtime contracts.
 """
 
 from .execution_models import (
@@ -24,6 +26,9 @@ from .execution_models import (
     VerificationRequirement,
 )
 
+from .execution_context import ExecutionContext
+
+
 __all__ = [
     "DependencyType",
     "ExecutionConstraints",
@@ -44,4 +49,5 @@ __all__ = [
     "TaskPriority",
     "TaskStatus",
     "VerificationRequirement",
+    "ExecutionContext",
 ]
