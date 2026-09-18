@@ -1,7 +1,5 @@
 """
 VALE ALPHA - Scheduling Package
-
-Foundational scheduler contracts and models.
 """
 
 from .scheduler_models import (
@@ -14,17 +12,26 @@ from .scheduler_models import (
     SchedulerPolicy,
     SchedulerQueueEntry,
     SchedulerState,
-    SchedulerStatus,
     SchedulingDeadline,
     SchedulingDecision,
     SchedulingDecisionType,
     SchedulingPriority,
     SchedulingReason,
     SchedulingResourceProfile,
+    SchedulerStatus,
+)
+
+from .scheduler_engine import (
+    AlphaScheduler,
+    SchedulerError,
+    SchedulerOrderingKey,
+    SchedulerPlanError,
+    SchedulerStateError,
 )
 
 
 __all__ = [
+    # Models
     "DispatchBatch",
     "DispatchCandidate",
     "QueueState",
@@ -34,11 +41,18 @@ __all__ = [
     "SchedulerPolicy",
     "SchedulerQueueEntry",
     "SchedulerState",
-    "SchedulerStatus",
     "SchedulingDeadline",
     "SchedulingDecision",
     "SchedulingDecisionType",
     "SchedulingPriority",
     "SchedulingReason",
     "SchedulingResourceProfile",
+    "SchedulerStatus",
+
+    # Engine
+    "AlphaScheduler",
+    "SchedulerError",
+    "SchedulerOrderingKey",
+    "SchedulerPlanError",
+    "SchedulerStateError",
 ]
