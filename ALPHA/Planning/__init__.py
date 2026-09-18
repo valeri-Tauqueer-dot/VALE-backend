@@ -1,13 +1,18 @@
 """
 VALE ALPHA - Planning Package
 
-This package contains ALPHA's planning and execution-graph components.
-
-Planning is responsible for transforming execution requirements into
-structured work that can later be scheduled and executed.
-
-It does not perform the actual work itself.
+Planning and dependency-analysis components for ALPHA.
 """
+
+from .execution_planner import (
+    DependencySpecification,
+    ExecutionPlanner,
+    InvalidExecutionRequestError,
+    PlanningBlueprint,
+    PlanningConfigurationError,
+    PlanningError,
+    TaskSpecification,
+)
 
 from .task_graph import (
     DependencyCycleError,
@@ -19,9 +24,19 @@ from .task_graph import (
 
 
 __all__ = [
-    "DependencyCycleError",
+    # Execution planner
+    "ExecutionPlanner",
+    "PlanningBlueprint",
+    "TaskSpecification",
+    "DependencySpecification",
+    "PlanningError",
+    "InvalidExecutionRequestError",
+    "PlanningConfigurationError",
+
+    # Dependency graph
     "TaskDependencyGraph",
-    "TaskGraphError",
     "TaskGraphNode",
+    "TaskGraphError",
     "TaskNotFoundError",
+    "DependencyCycleError",
 ]
