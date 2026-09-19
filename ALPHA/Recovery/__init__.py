@@ -1,7 +1,7 @@
 """
 VALE AI - ALPHA Recovery Package
 
-Recovery-related execution infrastructure.
+Execution timeout, failure handling, and recovery infrastructure.
 """
 
 from .timeout_manager import (
@@ -17,7 +17,25 @@ from .timeout_manager import (
     TimeoutStateError,
 )
 
+from .recovery_manager import (
+    FailureClass,
+    FailureClassification,
+    RecoveryAction,
+    RecoveryConfigurationError,
+    RecoveryCycleResult,
+    RecoveryDecision,
+    RecoveryManager,
+    RecoveryManagerConfig,
+    RecoveryManagerError,
+    RecoveryPolicyError,
+    RecoveryRecord,
+    RecoveryState,
+    RecoveryStateError,
+    RetryDisposition,
+)
+
 __all__ = [
+    # Timeout Manager
     "TimeoutAction",
     "TimeoutCheckResult",
     "TimeoutConfigurationError",
@@ -28,4 +46,20 @@ __all__ = [
     "TimeoutRecord",
     "TimeoutState",
     "TimeoutStateError",
+
+    # Recovery Manager
+    "FailureClass",
+    "FailureClassification",
+    "RecoveryAction",
+    "RecoveryConfigurationError",
+    "RecoveryCycleResult",
+    "RecoveryDecision",
+    "RecoveryManager",
+    "RecoveryManagerConfig",
+    "RecoveryManagerError",
+    "RecoveryPolicyError",
+    "RecoveryRecord",
+    "RecoveryState",
+    "RecoveryStateError",
+    "RetryDisposition",
 ]
