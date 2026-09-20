@@ -1,0 +1,63 @@
+The market moves up, down, and sideways. A trend is the general direction of the price. When the price makes higher highs and higher lows, we call it an uptrend. When the price makes lower highs and lower lows, we call it a downtrend. When the price stays inside a small range, the market is moving sideways.
+
+Support is a price level where buyers often step in. Resistance is a price level where sellers often step in. When the price breaks through a level, the market may start a new move. Sometimes the break is false, and the price comes back quickly. This is why traders wait for confirmation.
+
+Risk comes first. Before a trader enters a trade, the trader asks one question: how much can I lose? A stop loss is an order that closes the trade when the price reaches a chosen level. A stop loss protects the account from a big loss. A small loss is normal. A big loss can end the game.
+
+Position size means how much money you put into one trade. A small position size keeps the risk low. Many traders risk only a small part of their account on each trade. If the account is small, the position must be small too. Size is a choice, and it is a very important choice.
+
+Volatility tells us how fast and how far the price moves. High volatility means big moves and more risk. Low volatility means small moves and less excitement. Volatility changes over time, so a plan that works in a calm market can fail in a wild market.
+
+Liquidity tells us how easy it is to buy or sell without moving the price. A liquid market has many buyers and many sellers. In an illiquid market, one large order can move the price a lot. Low liquidity means higher costs and more slippage. Slippage is the difference between the price you expected and the price you got.
+
+Volume is the amount that was traded in a period of time. A strong move with high volume is more trusted than a strong move with low volume. When the price rises and the volume falls, the move may be getting weak.
+
+A good strategy is a set of clear rules. The rules say when to enter, when to exit, and how much to risk. A strategy without rules is only a guess. A strategy with rules can be tested on old data. Testing on old data is called backtesting. Backtesting shows how the rules would have worked in the past, but it cannot promise the future.
+
+A trader must be careful with overfitting. Overfitting happens when a strategy is made to fit the past too perfectly. The strategy looks great on old data and then fails on new data. Simple rules usually last longer than complicated rules.
+
+Emotions are part of trading. Fear makes people close good trades too early. Greed makes people hold bad trades too long. A written plan helps a trader stay calm. When the plan is clear, the trader does not need to guess in the moment.
+
+Patience is a skill. The best trade is often the one you wait for. Many days there is no good setup, and doing nothing is a smart action. A trader who forces trades pays more fees and takes more risk.
+
+A trading journal is a notebook of every trade. It records the reason for the trade, the entry, the exit, and the result. It also records how the trader felt. After many weeks the journal shows patterns, and patterns show what to improve.
+
+Diversification means not putting everything in one place. If one asset falls, the others may not fall together. But in a big crisis many assets fall at the same time, so diversification helps but it does not remove all risk.
+
+A broker is a company that lets you buy and sell assets. An exchange is a marketplace where buyers and sellers meet. Before using a broker or an exchange, a person should check that it is regulated, that the fees are clear, and that withdrawals are easy.
+
+Crypto is a kind of digital money that lives on a computer network called a blockchain. Bitcoin was the first crypto. Many other coins exist today. Crypto prices can move very fast, and the market is open all day and all night. Because of this, the risk can be high, and a person should learn before they trade.
+
+A blockchain is a shared record book. Many computers keep the same copy, and new records are added in blocks. Once a block is added, it is very hard to change. This makes the record hard to fake.
+
+A wallet stores the keys that control your crypto. Keep the private key secret. If someone else gets the key, they can take the coins. Never send your private key or your recovery words to anyone.
+
+Leverage lets a trader control a large position with a small amount of money. Leverage makes gains bigger, and it makes losses bigger too. Too much leverage is one of the most common reasons accounts are lost. Many careful traders use low leverage or none at all.
+
+The risk to reward ratio compares how much you can lose with how much you can win. If you risk one unit to win two units, the ratio is one to two. A good ratio does not make a trade win, but it helps the account grow over many trades, even when some trades lose.
+
+A moving average is the average price over a number of periods. It smooths the price so the trend is easier to see. When the price is above the moving average, the trend is often up. When the price is below it, the trend is often down. A moving average follows the price, so it is always a little late.
+
+The relative strength index, or RSI, measures how strong a recent move was. A high RSI can mean the price rose fast, and a low RSI can mean the price fell fast. The RSI is a tool and not a prediction. A price can stay high for a long time even when the RSI is high.
+
+A market order buys or sells right now at the best price available. A limit order buys or sells only at the price you choose, or a better one. A limit order gives control over the price, but it may never be filled. A market order is filled quickly, but the price may be a little different from what you saw.
+
+The spread is the small gap between the buy price and the sell price. Fees and spread are a cost of every trade. A trader who trades all day must pay these costs many times, so the costs add up.
+
+A timeframe is the length of one candle on a chart. A candle can show one minute, one hour, or one day. A small timeframe shows more noise. A large timeframe shows the bigger picture. Many traders look at the large timeframe first and then the small one.
+
+A candle shows four prices: the open, the high, the low, and the close. A long candle shows a strong move. A candle with a long tail shows that the price went far and then came back. Candles tell a small story about the fight between buyers and sellers.
+
+News can move the market in a few seconds. A big event, like a rate decision or a big report, can make the price jump both ways. Some traders stay out before big news, because the risk is hard to measure. Fresh news must be checked with care, because a first report can be wrong.
+
+Drawdown is the fall in the account from its highest point. If an account goes from one hundred to eighty, the drawdown is twenty percent. A big drawdown is hard to fix, because a bigger gain is needed to come back. This is why protecting the account matters so much.
+
+A wise person tests an idea with a small amount first. Small tests give real lessons at a small cost. If the idea works many times, the size can grow slowly. If it fails, the loss is small, and the lesson is still worth it.
+
+VALE is an AI that studies the market with many brains. One brain looks at the market state. One brain checks the risk. One brain thinks about the strategy. Each brain does one job, and together they make one answer. VALE tells you what it sees, and it also tells you what it does not know.
+
+The market state is the current mood of the market. It can be trending, ranging, or unstable. VALE checks the market state first, because a strategy that fits a trending market may not fit a ranging market.
+
+When the data is old or missing, VALE says so. It does not make up numbers. A wise system knows the limits of what it knows. Confidence should go down when the evidence is weak, and it should go up when many signals agree.
+
+Risk first, then strategy. Protect the account, then look for the trade. Learn a little every day, and keep the plan simple. The market will still be here tomorrow.
