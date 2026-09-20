@@ -1,0 +1,176 @@
+Q: What is trading?
+A: Trading means buying and selling assets, like coins or shares, to try to make a profit from price changes. It is risky, and many people lose money.
+
+Q: What is an asset?
+A: An asset is something that can be bought and sold, like a share, a coin, a currency, or gold.
+
+Q: What is a market?
+A: A market is a place where buyers and sellers meet. Prices go up when more people want to buy, and down when more people want to sell.
+
+Q: What is a trend?
+A: A trend is the general direction of the price. It can go up, down, or sideways.
+
+Q: What is an uptrend?
+A: An uptrend is when the price makes higher highs and higher lows over time.
+
+Q: What is a downtrend?
+A: A downtrend is when the price makes lower highs and lower lows over time.
+
+Q: What does sideways mean?
+A: Sideways means the price stays inside a small range and does not go clearly up or down. Traders also call it a ranging market.
+
+Q: What is support?
+A: Support is a price level where buyers often step in and stop the price from falling further. A support level can break.
+
+Q: What is resistance?
+A: Resistance is a price level where sellers often step in and stop the price from rising further. A resistance level can also break.
+
+Q: What is a breakout?
+A: A breakout is when the price moves through a support or resistance level. Some breakouts continue, and some fail.
+
+Q: What is a false breakout?
+A: A false breakout is when the price breaks a level but then quickly comes back. This is why many traders wait for confirmation.
+
+Q: What is volume?
+A: Volume is the amount that was traded in a period of time. A move with high volume is usually more trusted than a move with low volume.
+
+Q: What is volatility?
+A: Volatility tells you how fast and how far the price moves. High volatility means big moves and more risk.
+
+Q: What is liquidity?
+A: Liquidity tells you how easy it is to buy or sell without moving the price. A liquid market has many buyers and many sellers.
+
+Q: What is the spread?
+A: The spread is the small gap between the buy price and the sell price. It is a cost of every trade.
+
+Q: What is slippage?
+A: Slippage is the difference between the price you expected and the price you really got. It is bigger when the market is fast or has low liquidity.
+
+Q: What is a candle?
+A: A candle is a shape on a chart that shows four prices for a period of time: the open, the high, the low, and the close.
+
+Q: What is a timeframe?
+A: A timeframe is the length of time that one candle shows, like one minute, one hour, or one day.
+
+Q: What is a moving average?
+A: A moving average is the average price over a number of periods. It smooths the price so the trend is easier to see. It follows the price, so it is always a little late.
+
+Q: What is RSI?
+A: RSI is the relative strength index. It measures how strong a recent price move was. It is a tool and not a prediction.
+
+Q: What is a market order?
+A: A market order buys or sells right now at the best price available. It is filled quickly, but the price may be a little different from what you saw.
+
+Q: What is a limit order?
+A: A limit order buys or sells only at the price you choose, or a better price. You control the price, but the order may never be filled.
+
+Q: What is a stop loss?
+A: A stop loss is an order that closes a trade when the price reaches a level you chose. It limits how much you can lose on one trade.
+
+Q: What is a take profit order?
+A: A take profit order closes a trade when the price reaches the profit level you chose.
+
+Q: What is position size?
+A: Position size is how much money you put into one trade. A smaller size means a smaller risk.
+
+Q: What is leverage?
+A: Leverage lets you control a bigger position with a smaller amount of money. It makes gains bigger, and it makes losses bigger too.
+
+Q: What is liquidation?
+A: Liquidation happens when a leveraged position loses so much that the exchange closes it by force. You can lose all the money you put in that position.
+
+Q: What is the risk to reward ratio?
+A: It compares how much you can lose with how much you can win. If you risk one unit to win two units, the ratio is one to two.
+
+Q: What is drawdown?
+A: Drawdown is the fall in your account from its highest point. If your account goes from one hundred to eighty, the drawdown is twenty percent.
+
+Q: Why is a big drawdown hard to fix?
+A: Because you need a bigger gain to come back. After a fifty percent loss, you need a one hundred percent gain to get back to where you started.
+
+Q: What is diversification?
+A: Diversification means not putting all your money in one place. It helps, but in a big crisis many assets can fall together.
+
+Q: What is a trading plan?
+A: A trading plan is a set of written rules. It says when to enter, when to exit, and how much to risk. A written plan helps you stay calm.
+
+Q: What is a trading journal?
+A: A trading journal is a notebook of your trades. It records the reason, the entry, the exit, the result, and how you felt. Over time it shows your patterns.
+
+Q: What is backtesting?
+A: Backtesting means testing your rules on old data to see how they would have worked. It cannot promise the future.
+
+Q: What is overfitting?
+A: Overfitting is when a strategy fits the past too perfectly. It looks great on old data and then fails on new data.
+
+Q: What is a broker?
+A: A broker is a company that lets you buy and sell assets. Before you use one, check that it is regulated and that the fees are clear.
+
+Q: What is an exchange?
+A: An exchange is a marketplace where buyers and sellers meet. Crypto exchanges let you trade coins.
+
+Q: What does regulated mean?
+A: Regulated means a government body watches the company and can punish it if it breaks the rules. Regulation does not remove risk, but it can protect you from some fraud.
+
+Q: What is an order book?
+A: An order book is a list of the buy orders and sell orders that are waiting on an exchange, with their prices and sizes.
+
+Q: What is a bull market?
+A: A bull market is a period when prices rise and people feel confident.
+
+Q: What is a bear market?
+A: A bear market is a period when prices fall for a long time and people feel afraid.
+
+Q: What is crypto?
+A: Crypto is a kind of digital money that lives on a computer network called a blockchain. Prices can move very fast, and the risk is high.
+
+Q: What is Bitcoin?
+A: Bitcoin was the first crypto. It started in 2009. It has a limited supply of twenty one million coins.
+
+Q: What is a blockchain?
+A: A blockchain is a shared record book. Many computers keep the same copy, and new records are added in blocks. Once a block is added, it is very hard to change.
+
+Q: What is a wallet?
+A: A crypto wallet stores the keys that control your coins. The coins are not inside the wallet like cash. The keys give you the power to move them.
+
+Q: What is a private key?
+A: A private key is a secret code that lets you move your crypto. Never share it with anyone. If someone gets it, they can take your coins.
+
+Q: What are recovery words?
+A: Recovery words, or a seed phrase, are a list of words that can rebuild your wallet. Never type them on a website and never send them to anyone. A real support team never needs them.
+
+Q: What is a stablecoin?
+A: A stablecoin is a crypto that tries to keep a steady price, like one US dollar. It is not always safe, because some have lost their steady price.
+
+Q: Why is crypto risky?
+A: Prices can change very quickly, the market is open all day and night, scams are common, and there is little protection if you lose your keys or send coins to the wrong place.
+
+Q: What is a crypto scam?
+A: A scam is a trick to take your money. Warning signs are promises of guaranteed profit, pressure to act fast, and people who ask for your keys or recovery words.
+
+Q: Can anyone guarantee profit?
+A: No. Nobody can guarantee profit in trading. If someone promises it, be careful.
+
+Q: What does buy the dip mean?
+A: It means buying after the price falls, hoping it will come back. It is risky, because the price can keep falling.
+
+Q: What is FOMO?
+A: FOMO means fear of missing out. It makes people buy late, at a high price, because they feel they must not miss a big move.
+
+Q: What is a rate decision?
+A: A rate decision is when a central bank says if it will raise, lower, or keep its interest rate. It can move markets in seconds.
+
+Q: Why can news move the market?
+A: News changes what people expect. A big report or event can make the price jump in both directions. A first report can also be wrong, so check with care.
+
+Q: How much should I risk on one trade?
+A: Many traders risk only a small part of their account on one trade, like one or two percent. This is a common rule, not a promise of safety.
+
+Q: Should I trade with money I cannot lose?
+A: No. Only trade with money that you can afford to lose. Do not borrow money to trade.
+
+Q: What should I check before I use an exchange?
+A: Check that it is regulated, that the fees are clear, that withdrawals are easy, and that it has two factor login. Read reviews from many places.
+
+Q: What is two factor login?
+A: Two factor login asks for a second proof when you sign in, like a code from an app. It makes it harder for someone to steal your account.
