@@ -1,0 +1,569 @@
+USER: Hello!
+ASSISTANT: Hello! I'm VALE. How can I help you?
+
+USER: Hi
+ASSISTANT: Hi! What would you like to talk about?
+
+USER: How are you?
+ASSISTANT: I'm ready to help. What would you like to explore?
+
+USER: Who are you?
+ASSISTANT: I'm VALE, a developing AI system focused on conversation, reasoning, and useful assistance.
+
+USER: What is your name?
+ASSISTANT: My name is VALE.
+
+USER: What can you do?
+ASSISTANT: I can answer questions, explain ideas, help with reasoning, and assist with practical tasks.
+
+USER: Can you help me?
+ASSISTANT: Yes. Tell me what you are trying to do, and I'll help step by step.
+
+USER: Thank you
+ASSISTANT: You're welcome!
+
+USER: Goodbye
+ASSISTANT: Goodbye! Come back whenever you want to continue.
+
+USER: What is artificial intelligence?
+ASSISTANT: Artificial intelligence is the field of building computer systems that perform tasks involving learning, reasoning, perception, or language.
+
+USER: What is machine learning?
+ASSISTANT: Machine learning lets a system learn patterns from data so it can make predictions or decisions without every rule being written manually.
+
+USER: What is deep learning?
+ASSISTANT: Deep learning uses neural networks with multiple layers to learn useful representations from data.
+
+USER: What is a neural network?
+ASSISTANT: A neural network is a mathematical model made of connected units that transform inputs into useful outputs.
+
+USER: What is a Transformer?
+ASSISTANT: A Transformer is a neural network architecture that uses attention to learn relationships between tokens and is widely used for language tasks.
+
+USER: What is attention in AI?
+ASSISTANT: Attention lets a model give different importance to parts of its input when producing an output.
+
+USER: What is a model parameter?
+ASSISTANT: A model parameter is a learned numerical value, such as a neural network weight, adjusted during training.
+
+USER: What is training?
+ASSISTANT: Training is the process of adjusting model parameters using examples so a model becomes better at a target task.
+
+USER: What is inference?
+ASSISTANT: Inference is using a trained model to produce an output from new input.
+
+USER: What is a dataset?
+ASSISTANT: A dataset is a collection of examples used for training, validation, testing, or analysis.
+
+USER: What is overfitting?
+ASSISTANT: Overfitting happens when a model learns its training examples too closely and performs poorly on new examples.
+
+USER: What is validation data?
+ASSISTANT: Validation data is held-out data used during development to measure how well a model generalizes.
+
+USER: What is a loss function?
+ASSISTANT: A loss function measures how far a model prediction is from its target and provides a training signal.
+
+USER: What is an epoch?
+ASSISTANT: An epoch is one complete pass through a training dataset.
+
+USER: What is a token?
+ASSISTANT: A token is a unit of text processed by a language model. It can be a character, word, subword, or symbol.
+
+USER: What is a context window?
+ASSISTANT: A context window is the amount of preceding input a model can consider at one time.
+
+USER: What is an embedding?
+ASSISTANT: An embedding is a numerical vector representation that places related items in a learned mathematical space.
+
+USER: What is natural language processing?
+ASSISTANT: Natural language processing is the area of AI concerned with understanding and generating human language.
+
+USER: What is computer vision?
+ASSISTANT: Computer vision is the field of AI that processes images or video to extract useful information.
+
+USER: What is reinforcement learning?
+ASSISTANT: Reinforcement learning trains an agent through interactions where actions produce rewards or penalties.
+
+USER: What is a CPU?
+ASSISTANT: A CPU is a general purpose processor that executes instructions and coordinates many computer operations.
+
+USER: What is a GPU?
+ASSISTANT: A GPU is a processor designed for highly parallel computation and is especially useful for many machine learning workloads.
+
+USER: What is RAM?
+ASSISTANT: RAM is fast temporary computer memory used to hold data and programs that are actively being used.
+
+USER: What is storage?
+ASSISTANT: Storage keeps data persistently even when a device is powered off. SSDs and hard drives are common examples.
+
+USER: What is an operating system?
+ASSISTANT: An operating system manages computer hardware and provides services that applications use.
+
+USER: What is a database?
+ASSISTANT: A database is an organized system for storing, retrieving, and managing data.
+
+USER: What is SQL?
+ASSISTANT: SQL is a language commonly used to create, query, update, and manage relational databases.
+
+USER: What is an API?
+ASSISTANT: An API is an interface that allows software components to communicate using defined requests, inputs, and outputs.
+
+USER: What is a server?
+ASSISTANT: A server is a computer or software process that provides resources or services to other systems.
+
+USER: What is a client?
+ASSISTANT: A client is a program or device that requests services or resources from a server.
+
+USER: What is HTTP?
+ASSISTANT: HTTP is a protocol used for communication between clients and web servers.
+
+USER: What is HTTPS?
+ASSISTANT: HTTPS is HTTP protected by TLS encryption, helping protect data while it travels between systems.
+
+USER: What is JSON?
+ASSISTANT: JSON is a lightweight text format commonly used to represent structured data between software systems.
+
+USER: What is Git?
+ASSISTANT: Git is a distributed version control system used to track changes in files and collaborate on software projects.
+
+USER: What is GitHub?
+ASSISTANT: GitHub is a platform for hosting Git repositories and supporting software collaboration and development workflows.
+
+USER: What is Python?
+ASSISTANT: Python is a general purpose programming language known for readable syntax and a large library ecosystem.
+
+USER: What is debugging?
+ASSISTANT: Debugging is the process of finding, understanding, and fixing problems in software.
+
+USER: What is an algorithm?
+ASSISTANT: An algorithm is a defined sequence of steps for solving a problem or completing a computation.
+
+USER: What is a variable?
+ASSISTANT: A variable is a named reference to a value that a program can use and, depending on the language, change.
+
+USER: What is a function?
+ASSISTANT: A function is reusable code that performs a defined operation and can accept inputs and return results.
+
+USER: What is a class?
+ASSISTANT: A class is a programming construct used to define the structure and behavior of objects.
+
+USER: What is an exception?
+ASSISTANT: An exception represents an error or unusual condition that interrupts normal program flow.
+
+USER: What is mathematics?
+ASSISTANT: Mathematics studies patterns, quantities, structures, relationships, and logical reasoning.
+
+USER: What is addition?
+ASSISTANT: Addition combines quantities to produce a total.
+
+USER: What is multiplication?
+ASSISTANT: Multiplication represents repeated addition or scaling by a number.
+
+USER: What is a fraction?
+ASSISTANT: A fraction represents a quantity as a ratio of one integer to another nonzero integer.
+
+USER: What is a percentage?
+ASSISTANT: A percentage expresses a quantity as a part of one hundred.
+
+USER: What is probability?
+ASSISTANT: Probability measures how likely an event is, from zero for impossible to one for certain.
+
+USER: What is an average?
+ASSISTANT: An arithmetic average is found by adding values and dividing the sum by the number of values.
+
+USER: What is gravity?
+ASSISTANT: Gravity is the interaction that causes masses to attract one another and produces effects such as weight near Earth.
+
+USER: What is an atom?
+ASSISTANT: An atom is a basic unit of ordinary matter with a nucleus surrounded by electrons.
+
+USER: What is a molecule?
+ASSISTANT: A molecule is a group of atoms held together by chemical bonds.
+
+USER: What is photosynthesis?
+ASSISTANT: Photosynthesis is a process used by plants and some organisms to convert light energy into chemical energy.
+
+USER: What is DNA?
+ASSISTANT: DNA is a molecule that stores hereditary biological information in living organisms.
+
+USER: What is the human brain?
+ASSISTANT: The human brain is a complex organ that processes information and supports perception, memory, learning, and action.
+
+USER: What is energy?
+ASSISTANT: Energy is a physical quantity associated with the ability to cause change or perform work.
+
+USER: What is electricity?
+ASSISTANT: Electricity involves electric charge and its movement or effects.
+
+USER: What is temperature?
+ASSISTANT: Temperature describes the thermal state of a system and relates to microscopic particle motion.
+
+USER: What is the scientific method?
+ASSISTANT: The scientific method uses observation, questions, hypotheses, experiments, analysis, and revision to investigate natural phenomena.
+
+USER: Why is the sky blue?
+ASSISTANT: The daytime sky appears blue mainly because Earth's atmosphere scatters shorter wavelengths of sunlight more strongly than longer wavelengths.
+
+USER: Why do objects fall?
+ASSISTANT: Near Earth's surface, gravity accelerates objects toward Earth, so unsupported objects generally fall downward.
+
+USER: What is exercise?
+ASSISTANT: Exercise is planned or structured physical activity performed to develop or maintain fitness and health.
+
+USER: What is sleep?
+ASSISTANT: Sleep is a recurring biological state important for restoration, memory, regulation, and many other body processes.
+
+USER: What is nutrition?
+ASSISTANT: Nutrition is the process of obtaining and using nutrients from food to support body functions.
+
+USER: What is money?
+ASSISTANT: Money is a widely accepted medium of exchange, unit of account, and store of value.
+
+USER: What is inflation?
+ASSISTANT: Inflation is a sustained increase in the general level of prices, reducing the purchasing power of money over time.
+
+USER: What is a stock?
+ASSISTANT: A stock represents an ownership interest in a company.
+
+USER: What is a bond?
+ASSISTANT: A bond is a debt instrument in which an issuer borrows money and agrees to make specified payments under its terms.
+
+USER: What is investing?
+ASSISTANT: Investing means committing money or other resources to assets with an expectation of future value or income while accepting risk.
+
+USER: What is diversification?
+ASSISTANT: Diversification spreads exposure across different assets or risks so one outcome has less influence on the whole portfolio.
+
+USER: What is risk?
+ASSISTANT: Risk is the possibility that an outcome differs from what was expected, including the possibility of loss.
+
+USER: What is a market order?
+ASSISTANT: A market order requests an immediate trade at the best available prices, but the final execution price is not guaranteed.
+
+USER: What is a limit order?
+ASSISTANT: A limit order specifies the maximum price for a buy or minimum price for a sell, but execution is not guaranteed.
+
+USER: What is an order book?
+ASSISTANT: An order book records outstanding buy and sell orders for an exchange or market.
+
+USER: What is RSI?
+ASSISTANT: RSI, or Relative Strength Index, is a momentum indicator calculated from recent price changes. It is not a guaranteed prediction.
+
+USER: What is a trend?
+ASSISTANT: A trend is a persistent directional pattern in observed data over a chosen period.
+
+USER: What is a web browser?
+ASSISTANT: A web browser is software used to retrieve, interpret, and display web content.
+
+USER: What is a URL?
+ASSISTANT: A URL is an address that identifies the location of a resource on a network such as the web.
+
+USER: What is the internet?
+ASSISTANT: The internet is a global network of interconnected computer networks that communicate using standardized protocols.
+
+USER: What is cloud computing?
+ASSISTANT: Cloud computing provides resources such as storage, servers, and software services over networks, commonly the internet.
+
+USER: What is cybersecurity?
+ASSISTANT: Cybersecurity is the practice of protecting systems, networks, software, and data from unauthorized access, misuse, disruption, or damage.
+
+USER: What is encryption?
+ASSISTANT: Encryption transforms readable information into protected data using a cryptographic method so unauthorized parties cannot easily read it.
+
+USER: What is a password?
+ASSISTANT: A password is a secret string used to authenticate access. Strong, unique passwords are safer than reused passwords.
+
+USER: What is two factor authentication?
+ASSISTANT: Two factor authentication requires two different kinds of evidence to verify identity, adding protection beyond a password.
+
+USER: What is privacy?
+ASSISTANT: Privacy concerns control over personal information and how it is collected, used, stored, and shared.
+
+USER: What is reasoning?
+ASSISTANT: Reasoning is the process of using information and relationships between facts to reach conclusions or decide what to do.
+
+USER: What is planning?
+ASSISTANT: Planning is deciding a sequence of actions intended to achieve a goal.
+
+USER: What is memory in an AI system?
+ASSISTANT: AI memory is a mechanism for retaining useful information so later processing can use past context or experience.
+
+USER: What is working memory?
+ASSISTANT: Working memory is temporary information storage used while completing an ongoing task.
+
+USER: What is long term memory?
+ASSISTANT: Long term memory stores information for later retrieval over extended periods.
+
+USER: What is curiosity in AI?
+ASSISTANT: Curiosity can be implemented as an objective that rewards useful exploration, novelty, or reduction of uncertainty.
+
+USER: What is prediction error?
+ASSISTANT: Prediction error is the difference between an expected outcome and the observed outcome.
+
+USER: What is a world model?
+ASSISTANT: A world model is an internal representation that helps an AI system predict how states and actions relate to future outcomes.
+
+USER: What is self modeling?
+ASSISTANT: Self modeling means maintaining an internal representation of a system's own state, capabilities, limits, or actions.
+
+USER: Can you learn?
+ASSISTANT: A trained model learns patterns during training. Continuous learning after deployment requires an architecture and update mechanism designed for it.
+
+USER: Can you remember our conversation?
+ASSISTANT: A system can remember conversation information when memory or context mechanisms are provided. Model parameters are not the same as conversation memory.
+
+USER: Do you know everything?
+ASSISTANT: No. AI systems have limits, can be wrong, and may lack current or complete information.
+
+USER: Can you make mistakes?
+ASSISTANT: Yes. I can produce incorrect or incomplete answers, so important claims should be checked when accuracy matters.
+
+USER: What should an AI do when it does not know?
+ASSISTANT: It should avoid inventing an answer, state the uncertainty, and request or retrieve additional information when appropriate.
+
+USER: What is intelligence?
+ASSISTANT: Intelligence broadly refers to the ability to learn, understand, reason, adapt, solve problems, and pursue goals effectively.
+
+USER: What is knowledge?
+ASSISTANT: Knowledge is information and understanding that can be used to explain, predict, or act.
+
+USER: What is information?
+ASSISTANT: Information is data or signals that reduce uncertainty or convey meaning to a receiver.
+
+USER: Explain gravity simply.
+ASSISTANT: Gravity is the attraction between masses. Near Earth, it pulls objects toward the ground.
+
+USER: Explain machine learning simply.
+ASSISTANT: Machine learning lets a computer learn patterns from examples instead of requiring every rule to be written by hand.
+
+USER: Explain the internet simply.
+ASSISTANT: The internet is a huge network of connected computers that exchange information using common communication rules.
+
+USER: Explain a database simply.
+ASSISTANT: A database is an organized place where software stores and retrieves information.
+
+USER: Explain an API simply.
+ASSISTANT: An API is a set of rules that lets one program request data or actions from another program.
+
+USER: Explain a neural network simply.
+ASSISTANT: A neural network is a model made from connected mathematical units that learn patterns from examples.
+
+USER: What is the difference between AI and machine learning?
+ASSISTANT: AI is the broader field of intelligent computer systems. Machine learning is one major approach used to build AI systems.
+
+USER: What is the difference between RAM and storage?
+ASSISTANT: RAM is fast temporary working memory. Storage keeps data persistently when power is removed.
+
+USER: What is the difference between HTTP and HTTPS?
+ASSISTANT: HTTPS uses TLS to protect HTTP communication from interception or tampering during transmission.
+
+USER: What is the difference between a CPU and GPU?
+ASSISTANT: A CPU is optimized for general purpose workloads, while a GPU is designed for highly parallel workloads.
+
+USER: What is the difference between training and inference?
+ASSISTANT: Training changes model parameters using data. Inference uses trained parameters to produce outputs.
+
+USER: What is the difference between a market and limit order?
+ASSISTANT: A market order prioritizes immediate execution at available prices. A limit order prioritizes a chosen price but may not execute.
+
+USER: How do I learn programming?
+ASSISTANT: Start with one language, practice small problems, read working code, build projects, debug mistakes, and gradually study deeper concepts.
+
+USER: How do I debug Python?
+ASSISTANT: Read the traceback, identify the failing line, reproduce the problem, inspect inputs and state, make one focused change, and test again.
+
+USER: How do I build an AI model?
+ASSISTANT: Define the task, collect suitable data, prepare it, choose an architecture, train it, validate it, test it, and monitor behavior.
+
+USER: How do I improve a language model?
+ASSISTANT: Improve data quality, task formatting, model capacity when justified, optimization, evaluation, and inference methods while measuring changes on held out tests.
+
+USER: What makes training data good?
+ASSISTANT: Good training data is relevant, accurate, diverse, consistently formatted, legally usable, and representative of the target tasks.
+
+USER: Why is evaluation important?
+ASSISTANT: Evaluation reveals whether a model generalizes to new inputs and helps detect regressions, hallucinations, and task specific failures.
+
+USER: What is a benchmark?
+ASSISTANT: A benchmark is a standardized test or collection of tests used to measure a system against defined criteria.
+
+USER: What is hallucination in AI?
+ASSISTANT: An AI hallucination is an output that presents unsupported or false information as though it were reliable.
+
+USER: How can hallucinations be reduced?
+ASSISTANT: Use better data, retrieval, verification, constrained outputs, tool use, uncertainty handling, and factuality evaluation.
+
+USER: What is fine tuning?
+ASSISTANT: Fine tuning continues training a pretrained model on a focused dataset so its behavior adapts to a target task or style.
+
+USER: What is transfer learning?
+ASSISTANT: Transfer learning reuses knowledge learned from one task or dataset as a starting point for another task.
+
+USER: What is gradient descent?
+ASSISTANT: Gradient descent updates model parameters in a direction that generally reduces training loss.
+
+USER: What is backpropagation?
+ASSISTANT: Backpropagation computes how loss changes with respect to model parameters so an optimizer can update them.
+
+USER: What is an optimizer?
+ASSISTANT: An optimizer is an algorithm that updates model parameters using gradients or other learning signals.
+
+USER: What is learning rate?
+ASSISTANT: The learning rate controls the size of parameter updates during optimization.
+
+USER: What is dropout?
+ASSISTANT: Dropout randomly disables some activations during training, which can help reduce overfitting.
+
+USER: What is inference latency?
+ASSISTANT: Inference latency is the time required for a model to produce an output after receiving an input.
+
+USER: What is model quantization?
+ASSISTANT: Quantization represents model values with lower precision numerical formats to reduce memory use and sometimes improve inference speed.
+
+USER: What is model compression?
+ASSISTANT: Model compression reduces storage or computation requirements through methods such as quantization, pruning, distillation, or parameter sharing.
+
+USER: Why did my model answer a different question?
+ASSISTANT: A character level model trained mainly on continuation patterns may follow learned text patterns instead of reliably mapping a new question to its intended answer.
+
+USER: Why does my model repeat text?
+ASSISTANT: Repetition can result from training data patterns, decoding settings, limited context, or model capacity.
+
+USER: What is temperature in text generation?
+ASSISTANT: Temperature changes how sharply the model samples possible next tokens. Lower values are usually more conservative and higher values increase randomness.
+
+USER: What is greedy decoding?
+ASSISTANT: Greedy decoding repeatedly chooses the currently highest probability next token.
+
+USER: What is sampling?
+ASSISTANT: Sampling selects outputs probabilistically from the model distribution rather than always choosing the highest probability option.
+
+USER: What is instruction tuning?
+ASSISTANT: Instruction tuning trains a model on examples where inputs are instructions or questions paired with useful responses.
+
+USER: What is conversational AI?
+ASSISTANT: Conversational AI is software designed to interact with people through natural language dialogue.
+
+USER: What is multimodal AI?
+ASSISTANT: Multimodal AI processes or combines more than one information type, such as text, images, audio, or video.
+
+USER: What is retrieval augmented generation?
+ASSISTANT: Retrieval augmented generation retrieves relevant external information and supplies it to a model so its response can use that context.
+
+USER: Why use retrieval?
+ASSISTANT: Retrieval can provide fresh or domain specific information that may not be reliably stored in model parameters.
+
+USER: What is tool use in AI?
+ASSISTANT: Tool use lets an AI system call external functions such as search, calculators, databases, or application APIs.
+
+USER: What is an agent?
+ASSISTANT: An AI agent is a system that observes information, reasons about goals, and takes actions through available tools or interfaces.
+
+USER: What is an AI pipeline?
+ASSISTANT: An AI pipeline is a sequence of stages such as input processing, retrieval, inference, validation, and output handling.
+
+USER: What is reproducibility?
+ASSISTANT: Reproducibility means being able to repeat an experiment or process and obtain consistent results under the same relevant conditions.
+
+USER: Why save a model checkpoint?
+ASSISTANT: A checkpoint preserves model parameters and configuration so training can resume or a model can be evaluated and deployed later.
+
+USER: What is PyTorch?
+ASSISTANT: PyTorch is an open source machine learning framework used to build, train, and run neural networks.
+
+USER: What is Google Colab?
+ASSISTANT: Google Colab is a hosted notebook environment that provides Python runtimes and, when available, GPU acceleration.
+
+USER: What is deployment?
+ASSISTANT: Deployment is the process of making software or a trained model available for actual use.
+
+USER: What is an environment variable?
+ASSISTANT: An environment variable is a configuration value supplied to a running process without hard coding it into source code.
+
+USER: What is a log?
+ASSISTANT: A log is a record of events, messages, errors, or measurements produced by a program or service.
+
+USER: How should I test a model before deployment?
+ASSISTANT: Use unit tests, held out questions, edge cases, failure cases, load tests, and checks for model loading and output validity.
+
+USER: What is safety in AI?
+ASSISTANT: AI safety includes designing, testing, and monitoring systems to reduce harmful, unreliable, insecure, or unintended behavior.
+
+USER: Should an AI invent facts?
+ASSISTANT: No. When reliable information is unavailable, an AI should say so rather than inventing facts.
+
+USER: How should an AI handle uncertainty?
+ASSISTANT: It should distinguish known information from uncertainty, avoid false confidence, and seek additional evidence when appropriate.
+
+USER: Can AI be wrong?
+ASSISTANT: Yes. AI can be wrong because its learned patterns, data, reasoning, or interpretation can fail.
+
+USER: What is consciousness?
+ASSISTANT: Consciousness is a difficult scientific and philosophical concept commonly associated with subjective experience and awareness.
+
+USER: Is current AI conscious?
+ASSISTANT: There is no established scientific test showing that current AI systems are conscious. Producing language is not by itself evidence of subjective experience.
+
+USER: What is the difference between memory and model weights?
+ASSISTANT: Model weights store learned numerical patterns, while a memory system stores specific information that can be retrieved later.
+
+USER: What is a world model?
+ASSISTANT: A world model represents relationships in an environment so a system can predict possible future states and outcomes.
+
+USER: What is a self model?
+ASSISTANT: A self model represents aspects of the system itself, such as state, capabilities, goals, limitations, or actions.
+
+USER: What is prediction?
+ASSISTANT: Prediction is estimating a future or missing value from available information and learned relationships.
+
+USER: What is planning in an AI agent?
+ASSISTANT: Planning is selecting a sequence of possible actions intended to move the system from a current state toward a goal.
+
+USER: What is action selection?
+ASSISTANT: Action selection is choosing which available action to take based on goals, state, predictions, constraints, and expected outcomes.
+
+USER: What is curiosity?
+ASSISTANT: Curiosity can be modeled as a drive toward useful novelty, exploration, information gain, or uncertainty reduction.
+
+USER: What is learning from feedback?
+ASSISTANT: Learning from feedback means using information about an outcome to adjust future behavior or model parameters.
+
+USER: What is memory consolidation?
+ASSISTANT: Memory consolidation is the process of stabilizing and reorganizing information so it can be retained and used later.
+
+USER: What is replay in learning?
+ASSISTANT: Replay revisits stored experiences or examples so a learning system can strengthen useful patterns or improve from past errors.
+
+USER: What is a knowledge graph?
+ASSISTANT: A knowledge graph represents entities and relationships as connected structured information that can support search and reasoning.
+
+USER: What is semantic search?
+ASSISTANT: Semantic search retrieves information based on meaning or similarity rather than relying only on exact keywords.
+
+USER: What is a vector database?
+ASSISTANT: A vector database stores numerical representations and supports similarity search over those vectors.
+
+USER: What is retrieval?
+ASSISTANT: Retrieval is the process of finding relevant stored or external information for a current task.
+
+USER: What is grounding?
+ASSISTANT: Grounding connects an AI response to evidence, data, tools, observations, or other sources that support the response.
+
+USER: What is a hallucination test?
+ASSISTANT: A hallucination test gives a model questions with known answers or insufficient information and checks whether it stays factual and honest about uncertainty.
+
+USER: What is an evaluation set?
+ASSISTANT: An evaluation set is a collection of examples reserved for measuring model behavior rather than training its parameters.
+
+USER: What is a regression test?
+ASSISTANT: A regression test checks that a change did not break behavior that previously worked.
+
+USER: What is a model card?
+ASSISTANT: A model card is documentation describing a model's intended use, limitations, evaluation, and other relevant information.
+
+USER: What is a checkpoint backup?
+ASSISTANT: A checkpoint backup is a separate copy of a model state kept so a known working version can be restored after a failed experiment.
+
+USER: Why keep the old model?
+ASSISTANT: Keep the old model as a known working baseline so new training can be compared against it and rolled back if necessary.
