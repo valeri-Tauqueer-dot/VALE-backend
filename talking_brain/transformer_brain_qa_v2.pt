@@ -1,0 +1,23 @@
+# ============================================================
+# REBUILD VALE Q&A BRAIN
+# ============================================================
+
+import os
+
+folder = "/content/VALE-backend/talking_brain"
+
+part1 = f"{folder}/transformer_brain_qa_v2.part1"
+part2 = f"{folder}/transformer_brain_qa_v2.part2"
+output = f"{folder}/transformer_brain_qa_v2.pt"
+
+with open(output, "wb") as out:
+
+    with open(part1, "rb") as f:
+        out.write(f.read())
+
+    with open(part2, "rb") as f:
+        out.write(f.read())
+
+print("✅ VALE Q&A brain reconstructed")
+print("File:", output)
+print("Size:", os.path.getsize(output), "bytes")
