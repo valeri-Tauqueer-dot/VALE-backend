@@ -1,0 +1,98 @@
+Q: What is a chart pattern?
+A: A chart pattern is a shape that price often makes on a chart. Traders use patterns to guess what might happen next, but a pattern is never a promise.
+
+Q: What is a head and shoulders pattern?
+A: It is a shape with three peaks, a higher one in the middle and two lower ones on the sides. Some traders read it as a sign that an uptrend may be ending.
+
+Q: What is a double top?
+A: A double top is when price rises to about the same high point twice, with a dip between them. Some traders read it as a sign of possible weakness.
+
+Q: What is a double bottom?
+A: A double bottom is when price falls to about the same low point twice, with a rise between them. Some traders read it as a sign of possible strength.
+
+Q: What is a triangle pattern?
+A: A triangle forms when price swings get smaller and smaller, between two lines that move closer together. It often means the market is deciding its next direction.
+
+Q: What is a flag pattern?
+A: A flag is a short, narrow pause after a strong move, before price often continues in the same direction. It looks like a small rectangle on the chart.
+
+Q: What is MACD?
+A: MACD stands for moving average convergence divergence. It compares two moving averages to show momentum, whether it is speeding up or slowing down.
+
+Q: What is a Fibonacci retracement?
+A: It is a tool that marks certain price levels after a big move, based on a set of ratios. Some traders watch these levels for possible support or resistance.
+
+Q: What is a pivot point?
+A: A pivot point is a price level calculated from the previous period's high, low, and close. Traders use it as a reference for where price may turn.
+
+Q: What is scalping?
+A: Scalping means making many very short trades, aiming for small gains each time. It needs fast decisions and usually has higher fees from frequent trading.
+
+Q: What is swing trading?
+A: Swing trading means holding a trade for several days or weeks, aiming to catch a bigger price swing. It is slower than scalping and faster than long-term investing.
+
+Q: What is position trading?
+A: Position trading means holding a trade for months or longer, based on the bigger trend. It cares less about small daily moves.
+
+Q: What is dollar-cost averaging?
+A: It means buying a fixed amount on a regular schedule, no matter the price. It spreads out the risk of buying at just one price.
+
+Q: What is a trailing stop?
+A: A trailing stop is a stop loss that moves with the price as it goes in your favor, but does not move back. It can help lock in some profit while still giving a trade room.
+
+Q: What is a stop-limit order?
+A: It is a stop order that turns into a limit order once the stop price is reached, instead of a market order. It gives more price control, but it may not fill at all in a fast market.
+
+Q: How can news events increase slippage?
+A: During big news, prices can jump quickly and the gap between the buy price and sell price can widen. An order can fill at a price far from what was expected.
+
+Q: What is correlation between assets?
+A: Correlation shows how much two assets tend to move together. Two highly correlated assets do not really diversify a portfolio, since they tend to rise and fall together.
+
+Q: What is a hedge trade?
+A: A hedge trade is a position taken to offset risk in another position. If one loses value, the hedge is meant to gain, reducing the total swing.
+
+Q: What is paper trading?
+A: Paper trading means practicing trades with fake money, so mistakes do not cost anything real. It is a common way to test a plan before using real funds.
+
+Q: What is a trading edge?
+A: An edge is a real advantage that makes a strategy profitable over many trades, on average. Without an edge, costs and randomness tend to win over time.
+
+Q: What is expectancy in trading?
+A: Expectancy is the average result you can expect per trade, based on your win rate and your average win and loss size. A positive expectancy can still include many losing trades.
+
+Q: What is a win rate?
+A: Win rate is the share of trades that end in profit. A high win rate does not always mean a good strategy, if the losses are much bigger than the wins.
+
+Q: What does cut losses short, let winners run mean?
+A: It means exiting bad trades quickly, before they grow, while giving good trades room to keep gaining. It is easy to say and hard to do, since it fights normal emotions.
+
+Q: What is pyramiding a position?
+A: Pyramiding means adding to a winning trade as it moves in your favor. It can grow profits, but it also grows risk if the trend reverses.
+
+Q: What is averaging down, and why is it risky?
+A: Averaging down means buying more of something after its price has fallen, to lower the average cost. It is risky because the price can keep falling, and the loss keeps growing with it.
+
+Q: What is a martingale strategy, and why is it dangerous?
+A: A martingale strategy means doubling the size of a bet after every loss, aiming to recover everything with one win. It can wipe out an account quickly, since a losing streak needs only a normal length to cause a huge loss.
+
+Q: What is market impact?
+A: Market impact is how much a trade itself moves the price, especially for a large order in a market with low liquidity.
+
+Q: What is a whale, in trading or crypto?
+A: A whale is an account or wallet that holds a very large amount of an asset. Its trades can move the market more than an average trader's trade.
+
+Q: What is front running?
+A: Front running means using knowledge of an upcoming trade to trade first and profit from the price move it will cause. In regulated markets, this is usually illegal.
+
+Q: What is a circuit breaker in markets?
+A: A circuit breaker is a rule that pauses trading for a short time after a very sharp price move. It gives the market a moment to slow down and reduce panic.
+
+Q: What is a flash crash?
+A: A flash crash is a very fast, very sharp drop in price, often followed by a quick recovery. It can be caused by large orders, low liquidity, or automated trading gone wrong.
+
+Q: What is a black swan event?
+A: A black swan event is a rare, hard-to-predict event with a huge impact. Because it is so rare, plans and models often do not prepare for it well.
+
+Q: What is systemic risk?
+A: Systemic risk is the risk that a problem in one part of the market spreads and affects the whole system, not just one asset or one company.

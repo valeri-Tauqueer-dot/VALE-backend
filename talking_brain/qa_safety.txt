@@ -1,0 +1,89 @@
+Q: What is a rug pull?
+A: A rug pull is when the people behind a crypto project suddenly take the money and disappear, leaving the coin worthless. It is common with new, unproven projects.
+
+Q: What is a phishing scam?
+A: Phishing is a fake message or website made to look real, to trick you into typing in your password, keys, or recovery words.
+
+Q: How can I spot a fake exchange or fake app?
+A: Check the exact spelling of the name and website, look for reviews from other sources, and only download apps from the official app store listing.
+
+Q: How can I check if a crypto project is legitimate?
+A: Look for a clear team, a real use, honest information about risk, and independent reviews. Be careful of projects that only talk about price going up.
+
+Q: What is a hardware wallet, and why is it safer?
+A: A hardware wallet is a small physical device that stores your private keys offline. It is safer because a hacker on the internet cannot reach keys that are never connected online.
+
+Q: Should I keep all my crypto on an exchange?
+A: Many people move larger amounts to their own wallet, since an exchange can be hacked, frozen, or can fail. Keeping funds on an exchange long term adds a layer of risk you do not control.
+
+Q: What is a cold wallet versus a hot wallet?
+A: A cold wallet stays offline, like a hardware wallet. A hot wallet is connected to the internet, like an app on your phone. Cold wallets are generally safer for larger amounts.
+
+Q: What is an impersonation scam?
+A: An impersonation scam is when someone pretends to be a real company, a support agent, or someone you know, to gain your trust and ask for money or your keys.
+
+Q: What is a giveaway scam?
+A: A giveaway scam promises to double or multiply any crypto you send them. No real giveaway asks you to send crypto first.
+
+Q: What is a pig butchering scam?
+A: It is a long scam where someone builds a friendship or relationship with the target over weeks, before slowly convincing them to invest in a fake platform.
+
+Q: Why do scammers often create urgency?
+A: Urgency stops people from thinking clearly or asking for a second opinion. A real opportunity rarely disappears in the next ten minutes.
+
+Q: What is a red flag in an investment offer?
+A: Common red flags are a guaranteed return, pressure to act fast, secrecy about how it works, and requests to keep it private from family or friends.
+
+Q: What is know your customer, or KYC?
+A: KYC is a process where a company checks your identity before letting you use its service. It is a common, normal requirement at regulated exchanges.
+
+Q: What is anti-money laundering, or AML?
+A: AML rules are meant to stop illegal money from being hidden or moved through the financial system. This is why exchanges ask questions about where funds come from.
+
+Q: What happens if I cannot cover a margin call?
+A: The broker or exchange can close your position by force, often at a bad price, to limit further loss. This can happen very fast in a leveraged trade.
+
+Q: Why is over-leveraging dangerous?
+A: With high leverage, even a small price move against you can wipe out your money. It turns a normal, survivable loss into a total one.
+
+Q: Why is trading on emotion after a loss risky?
+A: A recent loss can push someone to take a bigger, faster trade to win it back. This usually leads to a bigger loss, not a recovery.
+
+Q: What is a cooling-off period, and why might it help?
+A: It is a rule you set for yourself to stop trading for a while after a big loss or a strong emotion. It gives you time to think clearly before the next decision.
+
+Q: What is position sizing based on account risk percentage?
+A: It means deciding how much to trade based on a fixed percentage of your account, not a fixed amount of money. As the account changes size, the trade size adjusts with it.
+
+Q: What is a maximum daily loss limit?
+A: It is a rule that says stop trading for the day once losses reach a certain amount. It protects the account from one bad day turning into a disaster.
+
+Q: Why might a beginner avoid options and futures at first?
+A: These tools can be more complex, and leverage is often built in. Mistakes with them can lose more money, faster, than in simpler, unleveraged trading.
+
+Q: What is counterparty risk?
+A: Counterparty risk is the risk that the other side of a deal, like an exchange or a broker, fails to meet its side of the agreement.
+
+Q: What is smart contract risk?
+A: It is the risk that a bug or flaw in a smart contract's code is used to steal or lock funds. Even well-reviewed contracts have had costly bugs.
+
+Q: What is impermanent loss?
+A: It is a loss that can happen when providing funds to certain crypto pools, caused by the prices of the two assets changing compared to each other.
+
+Q: What is a flash loan attack?
+A: It is when someone borrows a huge, uncollateralized amount for a single transaction, and uses it to manipulate prices or exploit a weakness, then repays it in the same transaction.
+
+Q: What is a 51% attack?
+A: It is when one group gains control of more than half of a blockchain's mining or validating power, letting them interfere with new transactions.
+
+Q: What is address poisoning?
+A: It is a scam where a fake address that looks similar to one you have used before is sent to your wallet history, hoping you will copy the wrong one by mistake.
+
+Q: Why should you double check a wallet address before sending crypto?
+A: A crypto transfer usually cannot be reversed. If the address is wrong, even by one letter, the funds can be lost for good.
+
+Q: What is a SIM swap attack?
+A: It is when a scammer tricks your phone carrier into moving your phone number to their device, so they can receive your login codes and take over your accounts.
+
+Q: Why is public wifi risky for trading or crypto apps?
+A: Public wifi can be watched or faked by an attacker, who may try to capture your passwords or session. Trading or moving funds is safer on a private, trusted connection.
