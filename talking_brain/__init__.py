@@ -1,1 +1,0 @@
-"""VALE Talking Brain package."""
