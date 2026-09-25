@@ -1,0 +1,25 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+bcrypt
+python-jose[cryptography]
+python-dotenv
+pydantic
+requests
+beautifulsoup4
+python-multipart
+Pillow>=10.0.0
+pytesseract>=0.3.10
+pypdf>=4.0.0
+python-docx>=1.1.0
+numpy
+
+# Render is CPU-only. Use the CPU PyTorch wheel instead of the default
+# CUDA-enabled distribution, which unnecessarily installs hundreds of MB
+# of NVIDIA runtime packages on the web service.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0+cpu
+
+# Optional: enable only if server-side voice transcription is required.
+# faster-whisper>=1.0.0
