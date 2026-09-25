@@ -1,999 +1,610 @@
+"""
+VALE Talking Brain V2 Connector
+================================
+
+Loads the trained VALE_TALKING_BRAIN_CONTEXT_V2 checkpoint.
+
+Expected files:
+
+talking_brain/
+    transformer_brain_context_v2.part1
+    transformer_brain_context_v2.part2
+
+The two parts are reconstructed automatically into:
+
+talking_brain/
+    transformer_brain_context_v2.pt
+"""
+
 from __future__ import annotations
 
-"""
-VALE TALKING BRAIN CONNECTOR
-
-Flow:
-
-VALE Brain Network
-        ↓
-brain results
-        ↓
-Talking Brain
-        ↓
-natural language
-        ↓
-USER
-
-The Talking Brain is NOT a specialist brain.
-
-Supported model files:
-
-1. transformer_brain_qa_v2.pt
-
-OR
-
-2. transformer_brain_qa_v2.pt.part1
-   transformer_brain_qa_v2.pt.part2
-
-OR
-
-3. transformer_brain_qa_v2.part1
-   transformer_brain_qa_v2.part2
-
-The split files are never deleted.
-"""
-
-import json
 import os
-import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import torch
+import torch.nn as nn
 
 
 # ============================================================
-# TALKING BRAIN DIRECTORY
+# PATHS
 # ============================================================
 
-HERE = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
 
-if str(HERE) not in sys.path:
-    sys.path.insert(0, str(HERE))
+BRAIN_DIR = BASE_DIR / "talking_brain"
 
+PART1 = BRAIN_DIR / "transformer_brain_context_v2.part1"
+PART2 = BRAIN_DIR / "transformer_brain_context_v2.part2"
 
-# ============================================================
-# IMPORT MODEL
-# ============================================================
-
-from step4_transformer import TalkingBrain
+MODEL_PATH = BRAIN_DIR / "transformer_brain_context_v2.pt"
 
 
 # ============================================================
-# TALKING BRAIN CONNECTOR
+# DEVICE
+# ============================================================
+
+DEVICE = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+
+
+# ============================================================
+# MODEL
+# ============================================================
+
+class TalkingBrainV2(nn.Module):
+
+    def __init__(
+        self,
+        vocab_size: int,
+        context: int,
+        embed_size: int,
+        n_head: int,
+        n_layer: int,
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+
+        self.context = context
+        self.embed_size = embed_size
+
+        self.token_embedding = nn.Embedding(
+            vocab_size,
+            embed_size
+        )
+
+        self.position_embedding = nn.Parameter(
+            torch.zeros(
+                context,
+                embed_size
+            )
+        )
+
+        self.blocks = nn.ModuleList()
+
+        for _ in range(n_layer):
+
+            self.blocks.append(
+                TransformerBlock(
+                    embed_size,
+                    n_head,
+                    context,
+                    dropout
+                )
+            )
+
+        self.ln_f = nn.LayerNorm(
+            embed_size
+        )
+
+        self.head = nn.Linear(
+            embed_size,
+            vocab_size,
+            bias=False
+        )
+
+    def forward(
+        self,
+        idx,
+        targets=None
+    ):
+
+        B, T = idx.shape
+
+        if T > self.context:
+            idx = idx[:, -self.context:]
+            T = self.context
+
+        x = self.token_embedding(idx)
+
+        x = x + self.position_embedding[:T]
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.ln_f(x)
+
+        logits = self.head(x)
+
+        loss = None
+
+        if targets is not None:
+
+            if targets.shape[1] > self.context:
+                targets = targets[:, -self.context:]
+
+            loss = nn.functional.cross_entropy(
+                logits.reshape(-1, logits.size(-1)),
+                targets.reshape(-1)
+            )
+
+        return logits, loss
+
+
+class TransformerBlock(nn.Module):
+
+    def __init__(
+        self,
+        embed_size,
+        n_head,
+        context,
+        dropout
+    ):
+        super().__init__()
+
+        self.ln1 = nn.LayerNorm(
+            embed_size
+        )
+
+        self.attn = nn.MultiheadAttention(
+            embed_size,
+            n_head,
+            dropout=dropout,
+            batch_first=True
+        )
+
+        self.ln2 = nn.LayerNorm(
+            embed_size
+        )
+
+        self.ff = nn.Sequential(
+            nn.Linear(
+                embed_size,
+                embed_size * 4
+            ),
+
+            nn.GELU(),
+
+            nn.Linear(
+                embed_size * 4,
+                embed_size
+            ),
+
+            nn.Dropout(dropout)
+        )
+
+        self.context = context
+
+    def forward(self, x):
+
+        T = x.size(1)
+
+        mask = torch.triu(
+            torch.ones(
+                T,
+                T,
+                device=x.device,
+                dtype=torch.bool
+            ),
+            diagonal=1
+        )
+
+        h = self.ln1(x)
+
+        attn_out, _ = self.attn(
+            h,
+            h,
+            h,
+            attn_mask=mask,
+            need_weights=False
+        )
+
+        x = x + attn_out
+
+        x = x + self.ff(
+            self.ln2(x)
+        )
+
+        return x
+
+
+# ============================================================
+# RECONSTRUCT CHECKPOINT
+# ============================================================
+
+def reconstruct_checkpoint() -> bool:
+
+    if MODEL_PATH.exists():
+        return True
+
+    if not PART1.exists():
+        print(
+            f"❌ Missing Talking Brain part 1: {PART1}"
+        )
+        return False
+
+    if not PART2.exists():
+        print(
+            f"❌ Missing Talking Brain part 2: {PART2}"
+        )
+        return False
+
+    print("🔧 Reconstructing Talking Brain V2...")
+
+    try:
+
+        with open(PART1, "rb") as f1, \
+             open(PART2, "rb") as f2, \
+             open(MODEL_PATH, "wb") as out:
+
+            while True:
+
+                chunk = f1.read(
+                    1024 * 1024
+                )
+
+                if not chunk:
+                    break
+
+                out.write(chunk)
+
+            while True:
+
+                chunk = f2.read(
+                    1024 * 1024
+                )
+
+                if not chunk:
+                    break
+
+                out.write(chunk)
+
+        print(
+            f"✅ Talking Brain reconstructed: {MODEL_PATH}"
+        )
+
+        return True
+
+    except Exception as exc:
+
+        print(
+            "❌ Talking Brain reconstruction failed:",
+            repr(exc)
+        )
+
+        return False
+
+
+# ============================================================
+# LOAD MODEL
 # ============================================================
 
 class TalkingBrainConnector:
 
-    def __init__(
-        self,
-        model_path: Optional[str] = None,
-    ):
+    def __init__(self):
 
         self.available = False
-
-        self.error: Optional[str] = None
-
+        self.error = None
         self.model = None
-
         self.letters = []
-
-        self.stoi: Dict[str, int] = {}
-
-        self.itos: Dict[int, str] = {}
-
-        # Render normally uses CPU.
-        # If CUDA is available, use it.
-        self.device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "cpu"
-        )
-
-        self.model_path = self._resolve_model_path(
-            model_path
-        )
+        self.stoi = {}
+        self.itos = {}
+        self.context = 512
 
         try:
 
-            checkpoint = self._load_checkpoint()
+            if not reconstruct_checkpoint():
 
-            required_keys = {
-                "state_dict",
-                "letters",
-                "context",
-                "embed_size",
-                "n_head",
-                "n_layer",
-                "dropout",
-            }
-
-            if not isinstance(
-                checkpoint,
-                dict,
-            ):
-                raise ValueError(
-                    "Talking Brain checkpoint is not a dictionary."
+                self.error = (
+                    "Talking Brain V2 checkpoint unavailable."
                 )
 
-            missing = (
-                required_keys
-                - set(checkpoint.keys())
+                return
+
+            checkpoint = torch.load(
+                MODEL_PATH,
+                map_location="cpu",
+                weights_only=False
             )
 
-            if missing:
-
-                raise ValueError(
-                    "Talking Brain checkpoint is missing keys: "
-                    + ", ".join(
-                        sorted(missing)
-                    )
-                )
-
-            # --------------------------------------------------------
-            # VOCABULARY
-            # --------------------------------------------------------
-
-            self.letters = list(
-                checkpoint["letters"]
-            )
-
-            if not self.letters:
-
-                raise ValueError(
-                    "Talking Brain vocabulary is empty."
-                )
+            self.letters = checkpoint[
+                "letters"
+            ]
 
             self.stoi = {
-                char: index
-                for index, char in enumerate(
+                ch: i
+                for i, ch in enumerate(
                     self.letters
                 )
             }
 
             self.itos = {
-                index: char
-                for index, char in enumerate(
+                i: ch
+                for i, ch in enumerate(
                     self.letters
                 )
             }
 
-            # --------------------------------------------------------
-            # CREATE MODEL
-            # --------------------------------------------------------
+            self.context = int(
+                checkpoint["context"]
+            )
 
-            self.model = TalkingBrain(
-
+            self.model = TalkingBrainV2(
                 vocab_size=len(
                     self.letters
                 ),
-
-                context=int(
-                    checkpoint["context"]
-                ),
-
+                context=self.context,
                 embed_size=int(
                     checkpoint["embed_size"]
                 ),
-
                 n_head=int(
                     checkpoint["n_head"]
                 ),
-
                 n_layer=int(
                     checkpoint["n_layer"]
                 ),
-
                 dropout=float(
                     checkpoint["dropout"]
-                ),
+                )
             )
-
-            # --------------------------------------------------------
-            # LOAD WEIGHTS
-            # --------------------------------------------------------
 
             self.model.load_state_dict(
                 checkpoint["state_dict"],
-                strict=True,
+                strict=True
             )
 
-            self.model.to(
-                self.device
-            )
-
+            self.model.to(DEVICE)
             self.model.eval()
 
             self.available = True
 
-            self.error = None
-
+            print("=" * 60)
+            print("🧠 VALE TALKING BRAIN V2 LOADED")
             print(
-                "============================================================",
-                flush=True,
+                "Model:",
+                checkpoint["model_type"]
             )
-
             print(
-                "🧠 TALKING BRAIN LOADED",
-                flush=True,
+                "Version:",
+                checkpoint["version"]
             )
-
             print(
-                f"Model: {self.model_path}",
-                flush=True,
+                "Device:",
+                DEVICE
             )
-
             print(
-                f"Device: {self.device}",
-                flush=True,
+                "Vocabulary:",
+                len(self.letters)
             )
-
             print(
-                f"Vocabulary: {len(self.letters)}",
-                flush=True,
+                "Context:",
+                self.context
             )
-
-            print(
-                f"Context: {self.model.context}",
-                flush=True,
-            )
-
-            print(
-                "============================================================",
-                flush=True,
-            )
+            print("=" * 60)
 
         except Exception as exc:
-
-            self.available = False
 
             self.error = (
                 f"{type(exc).__name__}: {exc}"
             )
 
             print(
-                "============================================================",
-                flush=True,
+                "❌ TALKING BRAIN V2 ERROR:",
+                self.error
             )
 
-            print(
-                "❌ TALKING BRAIN FAILED TO LOAD",
-                flush=True,
+    # ========================================================
+    # ENCODE
+    # ========================================================
+
+    def encode(self, text: str):
+
+        return [
+            self.stoi[ch]
+            for ch in text
+            if ch in self.stoi
+        ]
+
+    # ========================================================
+    # DECODE
+    # ========================================================
+
+    def decode(self, ids):
+
+        return "".join(
+            self.itos.get(
+                int(i),
+                ""
             )
+            for i in ids
+        )
 
-            print(
-                self.error,
-                flush=True,
-            )
+    # ========================================================
+    # GENERATE
+    # ========================================================
 
-            print(
-                "============================================================",
-                flush=True,
-            )
-
-    # ============================================================
-    # RESOLVE MODEL PATH
-    # ============================================================
-
-    def _resolve_model_path(
+    @torch.no_grad()
+    def generate(
         self,
-        model_path: Optional[str],
-    ) -> Path:
-
-        # Explicit path supplied by code.
-        if model_path:
-
-            return Path(
-                model_path
-            )
-
-        # Optional environment variable.
-        env_path = os.getenv(
-            "VALE_TALKING_BRAIN_MODEL",
-            "",
-        ).strip()
-
-        if env_path:
-
-            return Path(
-                env_path
-            )
-
-        # Default Render/GitHub location.
-        return (
-            HERE
-            / "transformer_brain_qa_v2.pt"
-        )
-
-    # ============================================================
-    # VALIDATE COMPLETE CHECKPOINT
-    # ============================================================
-
-    @staticmethod
-    def _load_file(
-        path: Path,
-    ) -> Optional[Dict[str, Any]]:
-
-        if not path.exists():
-
-            return None
-
-        if not path.is_file():
-
-            return None
-
-        # Your real brain is ~43 MB.
-        # This prevents Git LFS pointer files or tiny placeholders
-        # from being treated as the actual model.
-        if path.stat().st_size < (
-            1024 * 1024
-        ):
-
-            return None
-
-        try:
-
-            checkpoint = torch.load(
-                path,
-                map_location="cpu",
-                weights_only=False,
-            )
-
-            if not isinstance(
-                checkpoint,
-                dict,
-            ):
-
-                return None
-
-            required_keys = {
-                "state_dict",
-                "letters",
-                "context",
-                "embed_size",
-                "n_head",
-                "n_layer",
-                "dropout",
-            }
-
-            if not required_keys.issubset(
-                checkpoint.keys()
-            ):
-
-                return None
-
-            return checkpoint
-
-        except Exception:
-
-            return None
-
-    # ============================================================
-    # FIND SPLIT FILES
-    # ============================================================
-
-    def _split_candidates(
-        self,
-    ) -> Tuple[
-        Tuple[Path, Path],
-        ...
-    ]:
-
-        path = self.model_path
-
-        candidates = []
-
-        # --------------------------------------------------------
-        # FORMAT 1
-        #
-        # transformer_brain_qa_v2.pt.part1
-        # transformer_brain_qa_v2.pt.part2
-        # --------------------------------------------------------
-
-        candidates.append(
-            (
-                Path(
-                    str(path)
-                    + ".part1"
-                ),
-
-                Path(
-                    str(path)
-                    + ".part2"
-                ),
-            )
-        )
-
-        # --------------------------------------------------------
-        # FORMAT 2
-        #
-        # transformer_brain_qa_v2.part1
-        # transformer_brain_qa_v2.part2
-        #
-        # THIS IS THE FORMAT YOU CURRENTLY HAVE.
-        # --------------------------------------------------------
-
-        if path.suffix == ".pt":
-
-            base = path.with_suffix("")
-
-            candidates.append(
-                (
-                    Path(
-                        str(base)
-                        + ".part1"
-                    ),
-
-                    Path(
-                        str(base)
-                        + ".part2"
-                    ),
-                )
-            )
-
-        # Remove duplicate pairs.
-        unique = []
-
-        seen = set()
-
-        for first, second in candidates:
-
-            key = (
-                str(first),
-                str(second),
-            )
-
-            if key in seen:
-                continue
-
-            seen.add(key)
-
-            unique.append(
-                (
-                    first,
-                    second,
-                )
-            )
-
-        return tuple(
-            unique
-        )
-
-    # ============================================================
-    # RECONSTRUCT MODEL
-    # ============================================================
-
-    def _reconstruct(
-        self,
-        part1: Path,
-        part2: Path,
-    ) -> Dict[str, Any]:
-
-        if not part1.exists():
-
-            raise FileNotFoundError(
-                f"Missing Talking Brain part 1: {part1}"
-            )
-
-        if not part2.exists():
-
-            raise FileNotFoundError(
-                f"Missing Talking Brain part 2: {part2}"
-            )
-
-        if part1.stat().st_size == 0:
-
-            raise ValueError(
-                f"Talking Brain part 1 is empty: {part1}"
-            )
-
-        if part2.stat().st_size == 0:
-
-            raise ValueError(
-                f"Talking Brain part 2 is empty: {part2}"
-            )
-
-        output = self.model_path
-
-        temporary = Path(
-            str(output)
-            + ".rebuilding"
-        )
-
-        print(
-            "🔧 Reconstructing Talking Brain...",
-            flush=True,
-        )
-
-        print(
-            f"Part 1: {part1.name} "
-            f"({part1.stat().st_size:,} bytes)",
-            flush=True,
-        )
-
-        print(
-            f"Part 2: {part2.name} "
-            f"({part2.stat().st_size:,} bytes)",
-            flush=True,
-        )
-
-        try:
-
-            # ----------------------------------------------------
-            # WRITE PART 1 + PART 2
-            # ----------------------------------------------------
-
-            with open(
-                temporary,
-                "wb",
-            ) as output_file:
-
-                with open(
-                    part1,
-                    "rb",
-                ) as first:
-
-                    while True:
-
-                        chunk = first.read(
-                            1024 * 1024
-                        )
-
-                        if not chunk:
-                            break
-
-                        output_file.write(
-                            chunk
-                        )
-
-                with open(
-                    part2,
-                    "rb",
-                ) as second:
-
-                    while True:
-
-                        chunk = second.read(
-                            1024 * 1024
-                        )
-
-                        if not chunk:
-                            break
-
-                        output_file.write(
-                            chunk
-                        )
-
-                output_file.flush()
-
-                try:
-
-                    os.fsync(
-                        output_file.fileno()
-                    )
-
-                except OSError:
-
-                    pass
-
-            combined_size = (
-                temporary.stat().st_size
-            )
-
-            print(
-                f"Combined size: "
-                f"{combined_size:,} bytes",
-                flush=True,
-            )
-
-            # ----------------------------------------------------
-            # VERIFY RECONSTRUCTED MODEL
-            # ----------------------------------------------------
-
-            checkpoint = self._load_file(
-                temporary
-            )
-
-            if checkpoint is None:
-
-                raise ValueError(
-                    "The reconstructed Talking Brain "
-                    "checkpoint failed validation."
-                )
-
-            # ----------------------------------------------------
-            # ATOMICALLY MOVE INTO FINAL LOCATION
-            # ----------------------------------------------------
-
-            os.replace(
-                temporary,
-                output,
-            )
-
-            print(
-                f"✅ Talking Brain reconstructed: "
-                f"{output}",
-                flush=True,
-            )
-
-            return checkpoint
-
-        except Exception:
-
-            try:
-
-                if temporary.exists():
-
-                    temporary.unlink()
-
-            except OSError:
-
-                pass
-
-            raise
-
-    # ============================================================
-    # LOAD CHECKPOINT
-    # ============================================================
-
-    def _load_checkpoint(
-        self,
-    ) -> Dict[str, Any]:
-
-        # --------------------------------------------------------
-        # FIRST: COMPLETE .PT FILE
-        # --------------------------------------------------------
-
-        checkpoint = self._load_file(
-            self.model_path
-        )
-
-        if checkpoint is not None:
-
-            print(
-                f"✅ Complete Talking Brain found: "
-                f"{self.model_path}",
-                flush=True,
-            )
-
-            return checkpoint
-
-        # --------------------------------------------------------
-        # SECOND: SPLIT FILES
-        # --------------------------------------------------------
-
-        for part1, part2 in (
-            self._split_candidates()
-        ):
-
-            if (
-                part1.exists()
-                and part2.exists()
-            ):
-
-                return self._reconstruct(
-                    part1,
-                    part2,
-                )
-
-        # --------------------------------------------------------
-        # NOTHING FOUND
-        # --------------------------------------------------------
-
-        names = []
-
-        for part1, part2 in (
-            self._split_candidates()
-        ):
-
-            names.append(
-                f"{part1.name} + {part2.name}"
-            )
-
-        raise FileNotFoundError(
-            "Talking Brain checkpoint is unavailable.\n"
-            f"Expected complete file:\n"
-            f"  {self.model_path}\n"
-            "or one of these split pairs:\n  "
-            + "\n  ".join(names)
-        )
-
-    # ============================================================
-    # CONVERT BRAIN RESULT TO TEXT
-    # ============================================================
-
-    @staticmethod
-    def _text(
-        value: Any,
+        prompt: str,
+        max_new_tokens: int = 120,
+        temperature: float = 0.8
     ) -> str:
-
-        if value is None:
-
-            return ""
-
-        if isinstance(
-            value,
-            str,
-        ):
-
-            return value.strip()
-
-        try:
-
-            return json.dumps(
-                value,
-                ensure_ascii=False,
-                default=str,
-            )
-
-        except Exception:
-
-            return str(value)
-
-    # ============================================================
-    # GENERATE RESPONSE
-    # ============================================================
-
-    def respond(
-        self,
-        user_message: str,
-        brain_results: Dict[str, Any],
-        max_new_tokens: int = 220,
-    ) -> Optional[str]:
 
         if not self.available:
 
-            print(
-                "⚠️ Talking Brain unavailable:",
-                self.error,
-                flush=True,
-            )
+            return ""
 
-            return None
-
-        if self.model is None:
-
-            return None
-
-        if not isinstance(
-            brain_results,
-            dict,
-        ):
-
-            return None
-
-        # --------------------------------------------------------
-        # COMBINE SPECIALIST BRAIN RESULTS
-        # --------------------------------------------------------
-
-        sections = []
-
-        for name, result in (
-            brain_results.items()
-        ):
-
-            text = self._text(
-                result
-            )
-
-            if not text:
-
-                continue
-
-            # The trained model has context=128.
-            # Keep specialist output compact.
-            text = text[:500]
-
-            sections.append(
-                f"{name}: {text}"
-            )
-
-        if not sections:
-
-            return None
-
-        compact_results = "\n".join(
-            sections
-        )
-
-        # --------------------------------------------------------
-        # TALKING BRAIN PROMPT
-        # --------------------------------------------------------
-
-        prompt = (
-            "USER: "
-            + (
-                user_message
-                or ""
-            ).strip()
-            + "\n"
-            + compact_results
-            + "\nASSISTANT:"
-        )
-
-        context = int(
-            self.model.context
-        )
-
-        # Keep only the model's available context.
-        prompt = prompt[
-            -context:
-        ]
-
-        # --------------------------------------------------------
-        # CHARACTER ENCODING
-        # --------------------------------------------------------
-
-        ids = []
-
-        for char in prompt:
-
-            if char in self.stoi:
-
-                ids.append(
-                    self.stoi[char]
-                )
+        ids = self.encode(prompt)
 
         if not ids:
 
-            return None
+            return ""
 
         x = torch.tensor(
             [ids],
             dtype=torch.long,
-            device=self.device,
+            device=DEVICE
         )
 
-        generated = []
+        for _ in range(
+            max_new_tokens
+        ):
 
-         # --------------------------------------------------------
-        # GENERATE
-        # --------------------------------------------------------
+            x_cond = x[
+                :,
+                -self.context:
+            ]
 
-        try:
-
-            with torch.no_grad():
-
-                for _ in range(
-                    max(
-                        1,
-                        int(
-                            max_new_tokens
-                        ),
-                    )
-                ):
-
-                    output = self.model(
-                        x[:, -context:]
-                    )
-
-                    # Your TalkingBrain returns:
-                    #
-                    # (logits, attention)
-                    #
-                    # So take output[0].
-                    if isinstance(
-                        output,
-                        tuple,
-                    ):
-
-                        logits = output[0]
-
-                    else:
-
-                        logits = output
-
-                    next_id = int(
-                        torch.argmax(
-                            logits[
-                                0,
-                                -1
-                            ],
-                            dim=-1,
-                        ).item()
-                    )
-
-                    char = self.itos.get(
-                        next_id,
-                        "",
-                    )
-
-                    if not char:
-
-                        break
-
-                    generated.append(
-                        char
-                    )
-
-                    next_tensor = torch.tensor(
-                        [[next_id]],
-                        dtype=torch.long,
-                        device=self.device,
-                    )
-
-                    x = torch.cat(
-                        [
-                            x,
-                            next_tensor,
-                        ],
-                        dim=1,
-                    )
-
-                    current = "".join(
-                        generated
-                    )
-
-                    # Stop when the model starts another example.
-                    if (
-                        current.endswith(
-                            "\nUSER:"
-                        )
-                        or current.endswith(
-                            "\nQ:"
-                        )
-                    ):
-
-                        break
-
-            answer = "".join(
-                generated
-            ).strip()
-
-            # Remove accidental training prefixes.
-            for prefix in (
-                "ASSISTANT:",
-                "A:",
-            ):
-
-                if answer.startswith(
-                    prefix
-                ):
-
-                    answer = answer[
-                        len(prefix):
-                    ].strip()
-
-            return (
-                answer
-                if answer
-                else None
+            logits, _ = self.model(
+                x_cond
             )
 
-        except Exception as exc:
+            logits = logits[
+                :, -1, :
+            ]
 
-            print(
-                "❌ TALKING BRAIN INFERENCE ERROR:",
-                type(exc).__name__,
-                str(exc),
-                flush=True,
+            if temperature <= 0:
+
+                next_token = torch.argmax(
+                    logits,
+                    dim=-1,
+                    keepdim=True
+                )
+
+            else:
+
+                logits = (
+                    logits / temperature
+                )
+
+                probabilities = torch.softmax(
+                    logits,
+                    dim=-1
+                )
+
+                next_token = torch.multinomial(
+                    probabilities,
+                    num_samples=1
+                )
+
+            x = torch.cat(
+                [x, next_token],
+                dim=1
             )
 
-            return None
+        return self.decode(
+            x[0].tolist()
+        )
 
-    # ============================================================
-    # STATUS
-    # ============================================================
+    # ========================================================
+    # CLEAN RESPONSE
+    # ========================================================
 
-    def status(
+    @staticmethod
+    def clean_response(text: str) -> str:
+
+        if not text:
+            return ""
+
+        response = text
+
+        if "<ASSISTANT>" in response:
+
+            response = response.split(
+                "<ASSISTANT>",
+                1
+            )[1]
+
+        for marker in [
+            "<USER>",
+            "<CONTEXT>",
+            "<UNITY>",
+            "</UNITY>",
+            "<HEROIC>",
+            "</HEROIC>",
+            "<ASSISTANT>",
+            "</ASSISTANT>",
+        ]:
+
+            response = response.replace(
+                marker,
+                ""
+            )
+
+        return response.strip()
+
+    # ========================================================
+    # CHAT
+    # ========================================================
+
+    def chat(
         self,
-    ) -> Dict[str, Any]:
+        message: str,
+        unity: str = "",
+        heroic: str = "",
+        context: str = ""
+    ) -> str:
+
+        prompt = (
+            "<USER>"
+            + str(message)
+            + "<CONTEXT>"
+            + str(context)
+            + "<UNITY>"
+            + str(unity)
+            + "</UNITY>"
+            + "<HEROIC>"
+            + str(heroic)
+            + "</HEROIC>"
+            + "<ASSISTANT>"
+        )
+
+        raw = self.generate(
+            prompt,
+            max_new_tokens=120,
+            temperature=0.7
+        )
+
+        return self.clean_response(
+            raw
+        )
+
+    # ========================================================
+    # STATUS
+    # ========================================================
+
+    def status(self) -> Dict[str, Any]:
 
         return {
-
-            "available":
-                self.available,
-
-            "device":
-                str(self.device),
-
-            "model":
-                str(self.model_path),
-
-            "model_exists":
-                self.model_path.exists(),
-
-            "error":
-                self.error,
+            "available": self.available,
+            "device": str(DEVICE),
+            "model": str(MODEL_PATH),
+            "model_exists": MODEL_PATH.exists(),
+            "context": self.context,
+            "vocabulary": len(self.letters),
+            "error": self.error,
         }
+
+
+# ============================================================
+# GLOBAL CONNECTOR
+# ============================================================
+
+talking_brain = TalkingBrainConnector()
+
+
+# Compatibility aliases
+vale_talking_brain = talking_brain
+connector = talking_brain
