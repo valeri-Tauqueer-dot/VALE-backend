@@ -7,7 +7,7 @@ VALE's mission and objective intelligence brain.
 HEROIC determines what VALE actually needs to accomplish
 before execution is delegated to ALPHA and specialized brains.
 
-Current stage:
+Current integration:
 
     User Request
         ↓
@@ -21,25 +21,26 @@ Current stage:
         ↓
     Objective State
         ↓
-    Initial Task Definition
+    Task State
         ↓
     Structured HEROIC Result
 
-This version intentionally does NOT import HEROIC.Tasks because
-the current repository contains:
+This is the foundational HEROIC integration stage.
 
-    HEROIC/Tasks/mission_state.py
+It does not yet perform:
+- advanced intent reasoning
+- goal decomposition intelligence
+- capability selection
+- brain activation
+- dependency planning
+- ALPHA execution
+- specialist brain execution
+- MCVL verification
+- replanning
+- completion intelligence
+- escalation intelligence
 
-while HEROIC/Tasks/__init__.py currently references:
-
-    HEROIC/Tasks/task_state.py
-
-which does not exist yet.
-
-That Tasks package will be corrected as a separate step.
-
-This module therefore keeps the application startup safe while
-still integrating the currently valid HEROIC foundation modules.
+Those capabilities will be added progressively.
 """
 
 from __future__ import annotations
@@ -73,41 +74,19 @@ from HEROIC.objectives import (
     ObjectiveStatus,
 )
 
+from HEROIC.Tasks import (
+    HeroicTaskState,
+    TaskStatus,
+    TaskType,
+)
+
 
 class HeroicBrain(VALEBrainInterface):
     """
-    HEROIC mission and objective intelligence brain.
-
-    Current responsibilities:
-
-    - create mission identity
-    - create mission state
-    - represent initial user intent
-    - establish an initial goal
-    - establish an initial objective
-    - define an initial task
-    - return a structured HEROIC result
-
-    Future responsibilities will be added incrementally:
-
-    - advanced intent intelligence
-    - goal decomposition
-    - objective decomposition
-    - task planning
-    - capability selection
-    - brain activation
-    - dependency planning
-    - information sufficiency
-    - evidence requirements
-    - coordination
-    - ALPHA execution planning
-    - verification coordination
-    - replanning
-    - completion intelligence
-    - escalation
+    Foundational HEROIC mission and objective intelligence brain.
     """
 
-    VERSION = "0.2.1"
+    VERSION = "0.2.2"
 
     ARCHITECTURE_STAGE = (
         "HEROIC_FOUNDATIONAL_INTEGRATION"
@@ -123,7 +102,7 @@ class HeroicBrain(VALEBrainInterface):
         )
 
     # ==============================================================
-    # PUBLIC THINK
+    # THINK
     # ==============================================================
 
     def think(
@@ -132,20 +111,18 @@ class HeroicBrain(VALEBrainInterface):
         context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Process a user request through the current HEROIC foundation.
+        Convert a user request into an initial structured
+        HEROIC mission.
 
-        This is intentionally a foundational mission-construction
-        step, not the complete HEROIC reasoning system.
+        This method currently builds the mission structure.
+        It does not yet perform advanced reasoning or execution.
         """
 
         # ----------------------------------------------------------
-        # Validate request
+        # 1. VALIDATE REQUEST
         # ----------------------------------------------------------
 
-        if not isinstance(
-            user_request,
-            str,
-        ):
+        if not isinstance(user_request, str):
             raise TypeError(
                 "user_request must be a string."
             )
@@ -157,36 +134,36 @@ class HeroicBrain(VALEBrainInterface):
                 "user_request cannot be empty."
             )
 
-        context = (
-            dict(context)
-            if isinstance(context, dict)
-            else {}
-        )
+        if context is None:
+            context = {}
+
+        if not isinstance(context, dict):
+            raise TypeError(
+                "context must be a dictionary when provided."
+            )
 
         # ----------------------------------------------------------
-        # 1. MISSION IDENTITY
+        # 2. CREATE MISSION IDENTITY
         # ----------------------------------------------------------
 
         mission_id = (
             f"heroic-{uuid4().hex}"
         )
 
-        mission_identity = (
-            HeroicMissionIdentity(
-                mission_id=mission_id,
-                source="user",
-                metadata={
-                    "brain": "HEROIC",
-                    "version": self.VERSION,
-                    "architecture_stage": (
-                        self.ARCHITECTURE_STAGE
-                    ),
-                },
-            )
+        mission_identity = HeroicMissionIdentity(
+            mission_id=mission_id,
+            source="user",
+            metadata={
+                "brain": "HEROIC",
+                "version": self.VERSION,
+                "architecture_stage": (
+                    self.ARCHITECTURE_STAGE
+                ),
+            },
         )
 
         # ----------------------------------------------------------
-        # 2. MISSION STATE
+        # 3. CREATE MISSION STATE
         # ----------------------------------------------------------
 
         mission_state = HeroicMissionState(
@@ -198,17 +175,16 @@ class HeroicBrain(VALEBrainInterface):
             MissionStatus.UNDERSTANDING
         )
 
-        mission_state.relevant_context = (
-            dict(context)
+        mission_state.relevant_context = dict(
+            context
         )
 
-        # HEROIC itself is active for this mission.
         mission_state.add_active_brain(
             "HEROIC"
         )
 
         # ----------------------------------------------------------
-        # 3. INTENT STATE
+        # 4. CREATE INITIAL INTENT STATE
         # ----------------------------------------------------------
 
         intent_state = HeroicIntentState(
@@ -223,17 +199,8 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         intent_state.add_assumption(
-            "The request text is the current authoritative "
-            "description of the requested task."
+            "The request text is the current mission input."
         )
-
-        # IMPORTANT:
-        #
-        # confidence is a numeric property of IntentState.
-        #
-        # mission_state.intent_status is an EpistemicStatus.
-        #
-        # They must not be mixed.
 
         mission_state.intent = (
             intent_state.inferred_objective
@@ -244,19 +211,17 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         # ----------------------------------------------------------
-        # 4. OBJECTIVE
+        # 5. CREATE OBJECTIVE
         # ----------------------------------------------------------
 
         objective_id = (
             f"objective-{uuid4().hex}"
         )
 
-        objective_state = (
-            HeroicObjectiveState(
-                objective_id=objective_id,
-                description=user_request,
-                status=ObjectiveStatus.IDENTIFIED,
-            )
+        objective_state = HeroicObjectiveState(
+            objective_id=objective_id,
+            description=user_request,
+            status=ObjectiveStatus.IDENTIFIED,
         )
 
         objective_state.add_success_criterion(
@@ -269,7 +234,7 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         # ----------------------------------------------------------
-        # 5. GOAL
+        # 6. CREATE GOAL
         # ----------------------------------------------------------
 
         goal_id = (
@@ -294,66 +259,67 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         # ----------------------------------------------------------
-        # 6. INITIAL TASK
-        #
-        # The repository's Tasks package is not yet safe to import.
-        #
-        # Therefore we represent the initial task as structured
-        # mission data here.
-        #
-        # Once the dedicated HeroicTaskState file is corrected,
-        # this dictionary will be replaced by that state object.
+        # 7. CREATE TASK
         # ----------------------------------------------------------
 
         task_id = (
             f"task-{uuid4().hex}"
         )
 
-        task_state = {
-            "task_id": task_id,
-            "description": (
+        task_state = HeroicTaskState(
+            task_id=task_id,
+            description=(
                 f"Process and address: "
                 f"{user_request}"
             ),
-            "task_type": "analysis",
-            "status": "ready",
-            "objective_id": objective_id,
-            "goal_id": goal_id,
-            "dependency_task_ids": [],
-            "required_capabilities": [
-                "objective_understanding",
-                "intent_understanding",
-                "task_definition",
-            ],
-            "required_brains": [
-                "HEROIC",
-            ],
-            "inputs": {
-                "user_request": user_request,
-            },
-            "expected_outputs": [
-                "A structured response addressing "
-                "the user request."
-            ],
-            "success_criteria": [
-                "The task produces a response "
-                "relevant to the request."
-            ],
-            "constraints": [],
-            "blockers": [],
-            "assumptions": [
-                "The user request is the current "
-                "mission input."
-            ],
-            "metadata": {
+            task_type=TaskType.ANALYSIS,
+            status=TaskStatus.READY,
+            objective_id=objective_id,
+            goal_id=goal_id,
+        )
+
+        task_state.add_required_capability(
+            "intent_understanding"
+        )
+
+        task_state.add_required_capability(
+            "objective_understanding"
+        )
+
+        task_state.add_required_capability(
+            "task_definition"
+        )
+
+        task_state.add_required_brain(
+            "HEROIC"
+        )
+
+        task_state.add_expected_output(
+            "A structured response addressing "
+            "the user's request."
+        )
+
+        task_state.add_success_criterion(
+            "The task produces a response "
+            "relevant to the request."
+        )
+
+        task_state.assumptions.append(
+            "The user request is the current "
+            "mission input."
+        )
+
+        task_state.metadata.update(
+            {
                 "architecture_stage": (
                     self.ARCHITECTURE_STAGE
                 ),
-            },
-        }
+                "brain": "HEROIC",
+            }
+        )
 
         # ----------------------------------------------------------
-        # 7. CONNECT MISSION STATE
+        # 8. CONNECT INFORMATION INTO MISSION STATE
         # ----------------------------------------------------------
 
         mission_state.objective = (
@@ -376,6 +342,10 @@ class HeroicBrain(VALEBrainInterface):
             "task_definition"
         )
 
+        mission_state.information_state = (
+            mission_state.information_state.SUFFICIENT
+        )
+
         mission_state.notes.append(
             "Initial HEROIC mission structure created."
         )
@@ -385,10 +355,10 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         # ----------------------------------------------------------
-        # 8. BUILD STRUCTURED RESULT
+        # 9. BUILD RESULT
         # ----------------------------------------------------------
 
-        result = {
+        return {
             "brain": "HEROIC",
             "version": self.VERSION,
             "architecture_stage": (
@@ -396,9 +366,8 @@ class HeroicBrain(VALEBrainInterface):
             ),
             "status": "mission_created",
             "message": (
-                "HEROIC successfully created an "
-                "initial mission structure from "
-                "the user request."
+                "HEROIC successfully created "
+                "an initial structured mission."
             ),
             "mission": (
                 mission_identity.to_dict()
@@ -412,11 +381,11 @@ class HeroicBrain(VALEBrainInterface):
             "objective": (
                 objective_state.to_dict()
             ),
-            "task": task_state,
+            "task": (
+                task_state.to_dict()
+            ),
             "mission_state": (
                 mission_state.to_dict()
             ),
             "context": dict(context),
         }
-
-        return result
