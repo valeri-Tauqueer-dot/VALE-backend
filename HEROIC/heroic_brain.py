@@ -39,8 +39,6 @@ It does not yet perform:
 - replanning
 - completion intelligence
 - escalation intelligence
-
-Those capabilities will be added progressively.
 """
 
 from __future__ import annotations
@@ -53,9 +51,14 @@ from vale_brain_interface import VALEBrainInterface
 
 from HEROIC.identity import HeroicMissionIdentity
 
-from HEROIC.state import (
-    HeroicMissionState,
+# HeroicMissionState is exported by HEROIC.state.__init__
+from HEROIC.state import HeroicMissionState
+
+# The enums are defined in mission_state.py and are NOT exported
+# by HEROIC.state.__init__, so they must be imported directly.
+from HEROIC.state.mission_state import (
     MissionStatus,
+    InformationState,
     EpistemicStatus,
 )
 
@@ -343,7 +346,7 @@ class HeroicBrain(VALEBrainInterface):
         )
 
         mission_state.information_state = (
-            mission_state.information_state.SUFFICIENT
+            InformationState.SUFFICIENT
         )
 
         mission_state.notes.append(
