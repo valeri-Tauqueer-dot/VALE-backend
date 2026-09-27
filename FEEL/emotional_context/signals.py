@@ -28,7 +28,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from FEEL.core.models import (
+from FEEL.Core.models import (
     EmotionalSignal,
     EmotionalSignalType,
     EvidenceReference,
