@@ -23,11 +23,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from ..core.contracts import (
+from ..Core.contracts import (
     CognitiveContext,
     EngineResult,
 )
-from ..core.models import (
+from ..Core.models import (
     HumanContext,
 )
 
