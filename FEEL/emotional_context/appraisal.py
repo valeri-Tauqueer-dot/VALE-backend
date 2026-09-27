@@ -31,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
-from FEEL.core.models import (
+from FEEL.Core.models import (
     EmotionalSignal,
     EmotionalSignalType,
     EvidenceReference,
