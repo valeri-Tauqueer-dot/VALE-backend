@@ -45,7 +45,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from uuid import uuid4
 
-from FEEL.core.models import (
+from FEEL.Core.models import (
     EmotionalSignal,
     EmotionalSignalType,
     EvidenceReference,
