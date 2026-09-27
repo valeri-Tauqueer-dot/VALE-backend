@@ -31,8 +31,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
-from FEEL.core.contracts import CognitiveContext, EngineResult
-from FEEL.core.models import (
+from FEEL.Core.contracts import CognitiveContext, EngineResult
+from FEEL.Core.models import (
     EmotionalSignal,
     EvidenceReference,
     EpistemicClaim,
