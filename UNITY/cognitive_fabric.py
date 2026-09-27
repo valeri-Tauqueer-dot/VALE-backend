@@ -689,4 +689,35 @@ class CognitiveFabric:
 
     def validate(self) -> Dict[str, Any]:
         """
-       
+        Validate basic fabric invariants.
+
+        This is structural validation only.
+        It is not MCVL verification.
+        """
+
+        with self._lock:
+            registered = list(self._registered_nodes.keys())
+            handlers = list(self._handlers.keys())
+
+        invalid_handlers = [
+            name
+            for name in handlers
+            if name not in registered
+        ]
+
+        return {
+            "valid": len(invalid_handlers) == 0,
+            "registered_nodes": sorted(registered),
+            "invalid_handlers": sorted(invalid_handlers),
+            "version": VERSION,
+            "architecture_stage": ARCHITECTURE_STAGE,
+        }
+
+
+__all__ = [
+    "VERSION",
+    "ARCHITECTURE_STAGE",
+    "FabricMessage",
+    "DeliveryRecord",
+    "CognitiveFabric",
+]
