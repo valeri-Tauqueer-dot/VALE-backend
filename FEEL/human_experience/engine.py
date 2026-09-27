@@ -18,8 +18,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from FEEL.core.contracts import CognitiveContext, EngineResult
-from FEEL.core.models import (
+from FEEL.Core.contracts import CognitiveContext, EngineResult
+from FEEL.Core.models import (
     EvidenceReference,
     EpistemicClaim,
     EpistemicType,
