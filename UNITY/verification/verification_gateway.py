@@ -704,3 +704,29 @@ class VerificationGateway:
 
             for request in self._requests.values():
                 status_counts[request.status] = (
+                    status_counts.get(request.status, 0) + 1
+                )
+
+            return {
+                "version": VERSION,
+                "architecture_stage": ARCHITECTURE_STAGE,
+                "requests": len(self._requests),
+                "verifiers": self.verifier_names(),
+                "status_counts": status_counts,
+                "events": len(self._events),
+                "validation": self.validate(),
+            }
+
+    def to_dict(self) -> Dict[str, Any]:
+        with self._lock:
+            return {
+                "version": VERSION,
+                "architecture_stage": ARCHITECTURE_STAGE,
+                "requests": {
+                    key: value.to_dict()
+                    for key, value in self._requests.items()
+                },
+                "verifiers": self.verifier_names(),
+                "events": deepcopy(self._events),
+                "diagnostics": self.diagnostics(),
+            }
