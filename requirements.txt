@@ -19,7 +19,7 @@ numpy
 # CUDA-enabled distribution, which unnecessarily installs hundreds of MB
 # of NVIDIA runtime packages on the web service.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.14.0+cpu
+torch==2.4.1+cpu
 
 # Optional: enable only if server-side voice transcription is required.
 # faster-whisper>=1.0.0
