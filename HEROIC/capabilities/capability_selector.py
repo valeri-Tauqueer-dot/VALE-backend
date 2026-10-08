@@ -1,164 +1,113 @@
-from future import annotations
+from __future__ import annotations
 
 from typing import Iterable, List, Optional
 
-from HEROIC.capabilities.capability_registry import (
-HeroicCapabilityRegistry,
+from .capability_registry import HeroicCapabilityRegistry
+from .capability_state import (
+    CapabilityStatus,
+    HeroicCapabilityState,
 )
-from HEROIC.capabilities.capability_state import (
-CapabilityStatus,
-HeroicCapabilityState,
-)
+
 
 class HeroicCapabilitySelector:
-"""
-Selects capabilities required to accomplish a HEROIC objective.
-
-The selector does not execute capabilities and does not activate
-brains. It determines which registered capabilities best match
-the requested capability IDs, names, or required task capabilities.
-"""
-
-def __init__(
-    self,
-    registry: HeroicCapabilityRegistry,
-) -> None:
-    self.registry = registry
-
-def select(
-    self,
-    required_capabilities: Optional[Iterable[str]] = None,
-    *,
-    include_unavailable: bool = False,
-) -> List[HeroicCapabilityState]:
     """
-    Select registered capabilities matching the requested IDs or names.
+    Selects capabilities from the HEROIC capability registry.
 
-    Selection preserves the order supplied by the caller while avoiding
-    duplicate capability objects.
+    Selection is declarative only. It does not execute the
+    selected capabilities.
     """
-    if required_capabilities is None:
-        return []
 
-    selected: List[HeroicCapabilityState] = []
-    selected_ids = set()
+    def __init__(
+        self,
+        registry: Optional[
+            HeroicCapabilityRegistry
+        ] = None,
+    ) -> None:
+        self.registry = (
+            registry
+            if registry is not None
+            else HeroicCapabilityRegistry()
+        )
 
-    for requested in required_capabilities:
-        if not requested:
-            continue
+    def select(
+        self,
+        capability_ids: Iterable[str],
+    ) -> List[HeroicCapabilityState]:
+        selected: List[HeroicCapabilityState] = []
 
-        capability = self.registry.get(requested)
+        for capability_id in capability_ids:
+            capability = self.registry.get(
+                capability_id
+            )
 
-        if capability is None:
-            capability = self._find_by_name(requested)
+            if capability is not None:
+                selected.append(capability)
 
-        if capability is None:
-            continue
+        return selected
 
-        if (
-            not include_unavailable
-            and capability.status != CapabilityStatus.AVAILABLE
-        ):
-            continue
+    def select_available(
+        self,
+        capability_ids: Iterable[str],
+    ) -> List[HeroicCapabilityState]:
+        return [
+            capability
+            for capability in self.select(
+                capability_ids
+            )
+            if capability.status
+            == CapabilityStatus.AVAILABLE
+        ]
 
-        if capability.capability_id in selected_ids:
-            continue
+    def select_all(self) -> List[HeroicCapabilityState]:
+        return self.registry.list_all()
 
-        selected.append(capability)
-        selected_ids.add(capability.capability_id)
+    def missing(
+        self,
+        capability_ids: Iterable[str],
+    ) -> List[str]:
+        return [
+            capability_id
+            for capability_id in capability_ids
+            if capability_id not in self.registry
+        ]
 
-    return selected
+    def unavailable(
+        self,
+        capability_ids: Iterable[str],
+    ) -> List[HeroicCapabilityState]:
+        return [
+            capability
+            for capability in self.select(
+                capability_ids
+            )
+            if capability.status
+            != CapabilityStatus.AVAILABLE
+        ]
 
-def select_available(
-    self,
-    required_capabilities: Iterable[str],
-) -> List[HeroicCapabilityState]:
-    """Select only capabilities that are currently available."""
-    return self.select(
-        required_capabilities,
-        include_unavailable=False,
-    )
+    def rank(
+        self,
+        capabilities: Iterable[HeroicCapabilityState],
+    ) -> List[HeroicCapabilityState]:
+        return sorted(
+            list(capabilities),
+            key=lambda capability: (
+                capability.priority,
+                capability.confidence,
+            ),
+            reverse=True,
+        )
 
-def select_all(
-    self,
-    required_capabilities: Iterable[str],
-) -> List[HeroicCapabilityState]:
-    """Select capabilities regardless of current availability."""
-    return self.select(
-        required_capabilities,
-        include_unavailable=True,
-    )
+    def _find_by_name(
+        self,
+        name: str,
+    ) -> Optional[HeroicCapabilityState]:
+        normalized = name.strip().lower()
 
-def missing(
-    self,
-    required_capabilities: Iterable[str],
-) -> List[str]:
-    """
-    Return requested capabilities that are not registered.
+        if not normalized:
+            return None
 
-    A capability that exists but is currently unavailable is not
-    considered missing; availability is a separate condition.
-    """
-    missing: List[str] = []
+        for capability in self.registry.list_all():
+            if capability.name.strip().lower() == normalized:
+                return capability
 
-    for requested in required_capabilities:
-        if not requested:
-            continue
-
-        if self.registry.get(requested) is not None:
-            continue
-
-        if self._find_by_name(requested) is not None:
-            continue
-
-        missing.append(requested)
-
-    return missing
-
-def unavailable(
-    self,
-    required_capabilities: Iterable[str],
-) -> List[HeroicCapabilityState]:
-    """Return registered capabilities that are currently unavailable."""
-    selected = self.select_all(required_capabilities)
-
-    return [
-        capability
-        for capability in selected
-        if capability.status != CapabilityStatus.AVAILABLE
-    ]
-
-def rank(
-    self,
-    capabilities: Iterable[HeroicCapabilityState],
-) -> List[HeroicCapabilityState]:
-    """
-    Rank capabilities by priority and confidence.
-
-    Higher priority is preferred first. Confidence is used as the
-    secondary ordering factor.
-    """
-    return sorted(
-        capabilities,
-        key=lambda capability: (
-            capability.priority,
-            capability.confidence,
-        ),
-        reverse=True,
-    )
-
-def _find_by_name(
-    self,
-    requested_name: str,
-) -> Optional[HeroicCapabilityState]:
-    """Find a capability using its human-readable name."""
-    normalized = requested_name.strip().lower()
-
-    if not normalized:
         return None
-
-    for capability in self.registry.list_all():
-        if capability.name.strip().lower() == normalized:
-            return capability
-
-    return None
