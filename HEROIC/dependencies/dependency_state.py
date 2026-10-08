@@ -1,150 +1,107 @@
-from future import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List
 
-class DependencyType(str, Enum):
-"""
-Defines what kind of dependency exists between HEROIC
-mission components.
-"""
 
-TASK = "task"
-GOAL = "goal"
-OBJECTIVE = "objective"
-CAPABILITY = "capability"
-BRAIN = "brain"
-INFORMATION = "information"
-CONSTRAINT = "constraint"
-EVIDENCE = "evidence"
-RESOURCE = "resource"
-SYSTEM = "system"
-OTHER = "other"
+class DependencyType(str, Enum):
+    TASK = "task"
+    CAPABILITY = "capability"
+    INFORMATION = "information"
+    EVIDENCE = "evidence"
+    RESOURCE = "resource"
+    BRAIN = "brain"
+    SYSTEM = "system"
+    OTHER = "other"
+
 
 class DependencyStatus(str, Enum):
-"""
-Lifecycle state of a dependency.
-"""
+    UNKNOWN = "unknown"
+    PENDING = "pending"
+    SATISFIED = "satisfied"
+    BLOCKED = "blocked"
+    FAILED = "failed"
 
-UNKNOWN = "unknown"
-IDENTIFIED = "identified"
-SATISFIED = "satisfied"
-UNSATISFIED = "unsatisfied"
-BLOCKED = "blocked"
-FAILED = "failed"
 
 @dataclass
 class HeroicDependencyState:
-"""
-Represents a directed dependency between two HEROIC entities.
+    dependency_id: str
+    name: str
+    dependency_type: DependencyType = DependencyType.OTHER
+    description: str = ""
 
-`source_id` depends on `target_id`.
-Therefore, the target must be available or satisfied before
-the source can safely proceed.
-"""
+    status: DependencyStatus = DependencyStatus.UNKNOWN
 
-dependency_id: str
+    source_id: str = ""
+    target_id: str = ""
 
-source_id: str
+    required: bool = True
+    metadata: Dict[str, Any] = field(
+        default_factory=dict
+    )
 
-target_id: str
+    related_dependency_ids: List[str] = field(
+        default_factory=list
+    )
 
-dependency_type: DependencyType = DependencyType.OTHER
+    def add_related_dependency(
+        self,
+        dependency_id: str,
+    ) -> None:
+        if (
+            dependency_id
+            and dependency_id not in self.related_dependency_ids
+        ):
+            self.related_dependency_ids.append(
+                dependency_id
+            )
 
-status: DependencyStatus = DependencyStatus.IDENTIFIED
+    def mark_pending(self) -> None:
+        self.status = DependencyStatus.PENDING
 
-mandatory: bool = True
+    def satisfy(self) -> None:
+        self.status = DependencyStatus.SATISFIED
 
-priority: float = 0.0
+    def block(self) -> None:
+        self.status = DependencyStatus.BLOCKED
 
-reason: str = ""
+    def fail(self) -> None:
+        self.status = DependencyStatus.FAILED
 
-blockers: List[str] = field(default_factory=list)
+    def is_satisfied(self) -> bool:
+        return (
+            self.status
+            == DependencyStatus.SATISFIED
+        )
 
-metadata: Dict[str, Any] = field(default_factory=dict)
+    def is_blocked(self) -> bool:
+        return (
+            self.status
+            in {
+                DependencyStatus.BLOCKED,
+                DependencyStatus.FAILED,
+            }
+        )
 
-def add_blocker(
-    self,
-    blocker: str,
-) -> None:
-    """Register a blocker affecting this dependency."""
-    if blocker and blocker not in self.blockers:
-        self.blockers.append(blocker)
+    def is_pending(self) -> bool:
+        return (
+            self.status
+            == DependencyStatus.PENDING
+        )
 
-def mark_satisfied(self) -> None:
-    """Mark the dependency as satisfied."""
-    self.status = DependencyStatus.SATISFIED
-
-def mark_unsatisfied(
-    self,
-    reason: str = "",
-) -> None:
-    """Mark the dependency as unsatisfied."""
-    self.status = DependencyStatus.UNSATISFIED
-
-    if reason:
-        self.reason = reason
-
-def mark_blocked(
-    self,
-    blocker: str = "",
-) -> None:
-    """Mark the dependency as blocked."""
-    self.status = DependencyStatus.BLOCKED
-
-    if blocker:
-        self.add_blocker(blocker)
-
-def mark_failed(
-    self,
-    reason: str = "",
-) -> None:
-    """Mark the dependency as failed."""
-    self.status = DependencyStatus.FAILED
-
-    if reason:
-        self.reason = reason
-
-def is_satisfied(self) -> bool:
-    """Return whether the dependency is satisfied."""
-    return self.status == DependencyStatus.SATISFIED
-
-def is_blocking(self) -> bool:
-    """
-    Return whether this dependency currently prevents the
-    source entity from safely proceeding.
-    """
-    if not self.mandatory:
-        return False
-
-    return self.status in {
-        DependencyStatus.UNSATISFIED,
-        DependencyStatus.BLOCKED,
-        DependencyStatus.FAILED,
-    }
-
-def is_resolved(self) -> bool:
-    """
-    Return whether the dependency has reached a definitive
-    non-active state.
-    """
-    return self.status in {
-        DependencyStatus.SATISFIED,
-        DependencyStatus.FAILED,
-    }
-
-def to_dict(self) -> Dict[str, Any]:
-    """Serialize the dependency state."""
-    return {
-        "dependency_id": self.dependency_id,
-        "source_id": self.source_id,
-        "target_id": self.target_id,
-        "dependency_type": self.dependency_type.value,
-        "status": self.status.value,
-        "mandatory": self.mandatory,
-        "priority": self.priority,
-        "reason": self.reason,
-        "blockers": list(self.blockers),
-        "metadata": dict(self.metadata),
-    }
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "dependency_id": self.dependency_id,
+            "name": self.name,
+            "dependency_type": self.dependency_type.value,
+            "description": self.description,
+            "status": self.status.value,
+            "source_id": self.source_id,
+            "target_id": self.target_id,
+            "required": self.required,
+            "metadata": dict(self.metadata),
+            "related_dependency_ids": list(
+                self.related_dependency_ids
+            ),
+        }
