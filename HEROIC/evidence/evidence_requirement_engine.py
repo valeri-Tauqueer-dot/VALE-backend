@@ -1,232 +1,231 @@
-from future import annotations
+from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
-from HEROIC.evidence.evidence_state import (
-EvidenceStatus,
-HeroicEvidenceState,
+from .evidence_state import (
+    EvidenceStatus,
+    HeroicEvidenceState,
 )
 
+
 class HeroicEvidenceRequirementEngine:
-"""
-Evaluates whether HEROIC has sufficient evidence for the
-requirements of a mission, objective, goal, or task.
-
-The engine evaluates evidence; it does not fabricate, retrieve,
-or strengthen evidence that has not been provided.
-"""
-
-def __init__(
-    self,
-    evidence: Optional[
-        Iterable[HeroicEvidenceState]
-    ] = None,
-    minimum_confidence: float = 0.5,
-) -> None:
-    self._evidence: Dict[
-        str,
-        HeroicEvidenceState,
-    ] = {}
-
-    self.minimum_confidence = self._clamp(
-        minimum_confidence,
-        0.0,
-        1.0,
-    )
-
-    if evidence:
-        for item in evidence:
-            self.register(item)
-
-def register(
-    self,
-    evidence: HeroicEvidenceState,
-    overwrite: bool = True,
-) -> HeroicEvidenceState:
-    """Register an evidence state."""
-    if (
-        evidence.evidence_id in self._evidence
-        and not overwrite
-    ):
-        raise ValueError(
-            f"Evidence already exists: "
-            f"{evidence.evidence_id}"
-        )
-
-    self._evidence[evidence.evidence_id] = evidence
-
-    return evidence
-
-def get(
-    self,
-    evidence_id: str,
-) -> Optional[HeroicEvidenceState]:
-    """Return evidence by ID."""
-    return self._evidence.get(evidence_id)
-
-def require(
-    self,
-    evidence_id: str,
-) -> HeroicEvidenceState:
-    """Return evidence or raise an explicit error."""
-    evidence = self.get(evidence_id)
-
-    if evidence is None:
-        raise KeyError(
-            f"Unknown HEROIC evidence: {evidence_id}"
-        )
-
-    return evidence
-
-def evaluate(
-    self,
-    evidence: HeroicEvidenceState,
-) -> bool:
-    """Evaluate whether one evidence item is sufficient."""
-    return evidence.is_sufficient(
-        self.minimum_confidence
-    )
-
-def evaluate_all(self) -> Dict[str, object]:
     """
-    Evaluate all registered evidence.
+    Determines whether HEROIC has sufficient evidence
+    for a requested objective or decision.
 
-    Returns a structured assessment instead of reducing the
-    result to a single boolean so HEROIC can preserve uncertainty.
+    This engine does not create evidence and does not
+    fabricate missing information.
     """
-    available: List[str] = []
-    insufficient: List[str] = []
-    critical_missing: List[str] = []
-    contradicted: List[str] = []
-    stale: List[str] = []
-    unverified: List[str] = []
 
-    required_count = 0
+    def __init__(
+        self,
+        evidence: Optional[
+            Iterable[HeroicEvidenceState]
+        ] = None,
+    ) -> None:
+        self._evidence: List[
+            HeroicEvidenceState
+        ] = []
 
-    for evidence in self._evidence.values():
-        if evidence.required:
-            required_count += 1
+        if evidence:
+            for item in evidence:
+                self.add_evidence(item)
 
-        if evidence.status == EvidenceStatus.CONTRADICTED:
-            contradicted.append(evidence.evidence_id)
-
-        if evidence.status == EvidenceStatus.STALE:
-            stale.append(evidence.evidence_id)
-
-        if evidence.status == EvidenceStatus.UNVERIFIED:
-            unverified.append(evidence.evidence_id)
-
-        if self.evaluate(evidence):
-            available.append(evidence.evidence_id)
-        elif evidence.required:
-            insufficient.append(evidence.evidence_id)
-
-        if (
-            evidence.required
-            and evidence.critical
-            and not self.evaluate(evidence)
+    def add_evidence(
+        self,
+        evidence: HeroicEvidenceState,
+    ) -> HeroicEvidenceState:
+        if not isinstance(
+            evidence,
+            HeroicEvidenceState,
         ):
-            critical_missing.append(evidence.evidence_id)
+            raise TypeError(
+                "evidence must be a "
+                "HeroicEvidenceState instance."
+            )
 
-    sufficient = not insufficient
-    critical_blocked = bool(critical_missing)
+        existing = self.get_evidence(
+            evidence.evidence_id
+        )
 
-    return {
-        "sufficient": sufficient,
-        "critical_blocked": critical_blocked,
-        "required_count": required_count,
-        "available": available,
-        "insufficient": insufficient,
-        "critical_missing": critical_missing,
-        "contradicted": contradicted,
-        "stale": stale,
-        "unverified": unverified,
-    }
+        if existing is not None:
+            index = self._evidence.index(
+                existing
+            )
+            self._evidence[index] = evidence
+        else:
+            self._evidence.append(evidence)
 
-def is_sufficient(self) -> bool:
-    """Return whether all required evidence is sufficient."""
-    return bool(self.evaluate_all()["sufficient"])
+        return evidence
 
-def is_critically_blocked(self) -> bool:
-    """Return whether critical evidence is insufficient."""
-    return bool(
-        self.evaluate_all()["critical_blocked"]
-    )
+    def remove_evidence(
+        self,
+        evidence_id: str,
+    ) -> Optional[HeroicEvidenceState]:
+        evidence = self.get_evidence(
+            evidence_id
+        )
 
-def missing(
-    self,
-) -> List[HeroicEvidenceState]:
-    """Return required evidence that is not sufficient."""
-    return [
-        evidence
-        for evidence in self._evidence.values()
-        if evidence.required
-        and not self.evaluate(evidence)
+        if evidence is None:
+            return None
+
+        self._evidence.remove(evidence)
+
+        return evidence
+
+    def get_evidence(
+        self,
+        evidence_id: str,
+    ) -> Optional[HeroicEvidenceState]:
+        for evidence in self._evidence:
+            if evidence.evidence_id == evidence_id:
+                return evidence
+
+        return None
+
+    def list_all(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return list(self._evidence)
+
+    def available(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.is_available()
+        ]
+
+    def verified(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.is_verified()
+        ]
+
+    def missing(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.status
+            == EvidenceStatus.MISSING
+        ]
+
+    def stale(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.status
+            == EvidenceStatus.STALE
+        ]
+
+    def invalid(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.status
+            == EvidenceStatus.INVALID
+        ]
+
+    def required(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self._evidence
+            if evidence.required
+        ]
+
+    def required_missing(
+        self,
+    ) -> List[HeroicEvidenceState]:
+        return [
+            evidence
+            for evidence in self.required()
+            if not evidence.is_usable()
+        ]
+
+    def is_sufficient(
+        self,
+    ) -> bool:
+        return len(
+            self.required_missing()
+        ) == 0
+
+    def has_verified_evidence(
+        self,
+    ) -> bool:
+        return any(
+            evidence.is_verified()
+            for evidence in self._evidence
+        )
+
+    def mark_verified(
+        self,
+        evidence_id: str,
+    ) -> HeroicEvidenceState:
+        evidence = self._require(
+            evidence_id
+        )
+
+        evidence.mark_verified()
+
+        return evidence
+
+    def mark_stale(
+        self,
+        evidence_id: str,
+    ) -> HeroicEvidenceState:
+        evidence = self._require(
+            evidence_id
+        )
+
+        evidence.mark_stale()
+
+        return evidence
+
+    def mark_missing(
+        self,
+        evidence_id: str,
+    ) -> HeroicEvidenceState:
+        evidence = self._require(
+            evidence_id
+        )
+
+        evidence.mark_missing()
+
+        return evidence
+
+    def _require(
+        self,
+        evidence_id: str,
+    ) -> HeroicEvidenceState:
+        evidence = self.get_evidence(
+            evidence_id
+        )
+
+        if evidence is None:
+            raise KeyError(
+                f"Unknown HEROIC evidence: "
+                f"{evidence_id}"
+            )
+
+        return evidence
+
+    def clear(self) -> None:
+        self._evidence.clear()
+
+    def to_dict(self) -> List[dict]:
+        return [
+            evidence.to_dict()
+            for evidence in self._evidence
     ]
-
-def critical_missing(
-    self,
-) -> List[HeroicEvidenceState]:
-    """Return critical required evidence that is insufficient."""
-    return [
-        evidence
-        for evidence in self._evidence.values()
-        if evidence.required
-        and evidence.critical
-        and not self.evaluate(evidence)
-    ]
-
-def verified(
-    self,
-) -> List[HeroicEvidenceState]:
-    """Return explicitly verified evidence."""
-    return [
-        evidence
-        for evidence in self._evidence.values()
-        if evidence.is_verified()
-    ]
-
-def contradicted(
-    self,
-) -> List[HeroicEvidenceState]:
-    """Return contradicted evidence."""
-    return [
-        evidence
-        for evidence in self._evidence.values()
-        if evidence.status == EvidenceStatus.CONTRADICTED
-    ]
-
-def clear(self) -> None:
-    """Remove all registered evidence."""
-    self._evidence.clear()
-
-def __len__(self) -> int:
-    return len(self._evidence)
-
-def __contains__(
-    self,
-    evidence_id: str,
-) -> bool:
-    return evidence_id in self._evidence
-
-def to_dict(self) -> Dict[str, Dict]:
-    """Serialize all registered evidence."""
-    return {
-        evidence_id: evidence.to_dict()
-        for evidence_id, evidence
-        in self._evidence.items()
-    }
-
-@staticmethod
-def _clamp(
-    value: float,
-    minimum: float,
-    maximum: float,
-) -> float:
-    return max(
-        minimum,
-        min(
-            maximum,
-            float(value),
-        ),
-    )
