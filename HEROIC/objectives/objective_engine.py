@@ -1,48 +1,73 @@
+"""
+HEROIC OBJECTIVE ENGINE
+
+Creates, tracks, and evaluates HEROIC objectives.
+HEROIC defines outcomes; it does not execute tasks.
+"""
+
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
-from .objective_state import (
-    HeroicObjectiveState,
-    ObjectiveStatus,
-)
+from .objective_state import HeroicObjectiveState, ObjectiveStatus
 
 
 class HeroicObjectiveEngine:
-    """Creates, tracks, and evaluates HEROIC objectives."""
+    """Creates and manages objectives with dependency validation."""
+
+    VERSION = "0.2.0"
 
     def __init__(self) -> None:
         self.objectives: Dict[str, HeroicObjectiveState] = {}
 
     def create_objective(
         self,
-        objective_id: str,
         description: str,
+        objective_id: Optional[str] = None,
         goal_id: Optional[str] = None,
         priority: float = 0.5,
         success_criteria: Optional[List[str]] = None,
-        metadata: Optional[dict] = None,
+        required_outcomes: Optional[List[str]] = None,
+        unresolved_questions: Optional[List[str]] = None,
+        constraints: Optional[List[str]] = None,
+        assumptions: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> HeroicObjectiveState:
-        objective_id = str(objective_id).strip()
+        """Create an objective from a user request or explicit description."""
 
-        if not objective_id:
+        if not isinstance(description, str) or not description.strip():
+            raise ValueError("description must be a non-empty string.")
+
+        description = description.strip()
+        resolved_id = (
+            str(objective_id).strip()
+            if objective_id is not None
+            else f"heroic_objective_{uuid4().hex}"
+        )
+
+        if not resolved_id:
             raise ValueError("objective_id cannot be empty.")
 
-        if objective_id in self.objectives:
+        if resolved_id in self.objectives:
             raise ValueError(
-                f"Objective '{objective_id}' already exists."
+                f"Objective '{resolved_id}' already exists."
             )
 
         objective = HeroicObjectiveState(
-            objective_id=objective_id,
+            objective_id=resolved_id,
             description=description,
             goal_id=goal_id,
             priority=priority,
             success_criteria=list(success_criteria or []),
+            required_outcomes=list(required_outcomes or []),
+            unresolved_questions=list(unresolved_questions or []),
+            constraints=list(constraints or []),
+            assumptions=list(assumptions or []),
             metadata=dict(metadata or {}),
         )
 
-        self.objectives[objective_id] = objective
+        self.objectives[resolved_id] = objective
         return objective
 
     def get_objective(
@@ -70,9 +95,6 @@ class HeroicObjectiveEngine:
         objective = self.require_objective(objective_id)
         dependency = self.require_objective(dependency_objective_id)
 
-        if dependency.objective_id == objective.objective_id:
-            raise ValueError("An objective cannot depend on itself.")
-
         if self._would_create_cycle(
             objective.objective_id,
             dependency.objective_id,
@@ -88,7 +110,6 @@ class HeroicObjectiveEngine:
         objective_id: str,
         dependency_id: str,
     ) -> bool:
-        """Check whether adding objective -> dependency creates a cycle."""
         pending = [dependency_id]
         visited = set()
 
@@ -110,21 +131,18 @@ class HeroicObjectiveEngine:
         return False
 
     def get_ready_objectives(self) -> List[HeroicObjectiveState]:
-        """Return actionable objectives whose dependencies are complete."""
+        """Return objectives with completed dependencies and no blockers."""
+
         ready = []
 
         for objective in self.objectives.values():
-            if objective.status not in {
-                ObjectiveStatus.PENDING,
-                ObjectiveStatus.ACTIVE,
-            }:
+            if not objective.is_actionable():
                 continue
 
             dependencies_complete = all(
-                (
-                    dependency := self.objectives.get(dependency_id)
-                ) is not None
-                and dependency.status == ObjectiveStatus.COMPLETED
+                dependency_id in self.objectives
+                and self.objectives[dependency_id].status
+                == ObjectiveStatus.COMPLETED
                 for dependency_id in objective.dependency_objective_ids
             )
 
@@ -164,7 +182,7 @@ class HeroicObjectiveEngine:
     def list_objectives(self) -> List[HeroicObjectiveState]:
         return list(self.objectives.values())
 
-    def get_summary(self) -> dict:
+    def get_summary(self) -> Dict[str, Any]:
         counts = {
             status.value: sum(
                 objective.status == status
@@ -184,3 +202,6 @@ class HeroicObjectiveEngine:
 
     def clear(self) -> None:
         self.objectives.clear()
+
+
+__all__ = ["HeroicObjectiveEngine"]
