@@ -1,186 +1,193 @@
-from future import annotations
+from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
-from HEROIC.information.information_state import (
-InformationRequirementStatus,
-HeroicInformationState,
+from .information_state import (
+    HeroicInformationState,
+    InformationImportance,
 )
+from .missing_information import HeroicMissingInformation
+
 
 class HeroicInformationSufficiencyEngine:
-"""
-Evaluates whether HEROIC has enough information to proceed.
-
-This engine is deliberately conservative:
-missing, stale, ambiguous, contradicted, or unresolved critical
-information can prevent a mission from being considered sufficient.
-
-It does not retrieve missing information itself.
-"""
-
-def __init__(
-    self,
-    *,
-    minimum_confidence: float = 0.5,
-) -> None:
-    self.minimum_confidence = self._clamp(
-        minimum_confidence
-    )
-
-def evaluate(
-    self,
-    requirements: Iterable[HeroicInformationState],
-) -> Dict[str, object]:
     """
-    Evaluate a collection of information requirements.
+    Evaluates whether the available information is sufficient
+    for a HEROIC mission to proceed safely and coherently.
+
+    Missing, stale, or conflicting required information is
+    never treated as verified information.
     """
-    items = list(requirements)
 
-    missing: List[str] = []
-    partial: List[str] = []
-    stale: List[str] = []
-    ambiguous: List[str] = []
-    contradicted: List[str] = []
-    insufficient: List[str] = []
-    critical_missing: List[str] = []
+    def __init__(
+        self,
+        information: Optional[
+            Iterable[HeroicInformationState]
+        ] = None,
+    ) -> None:
+        self._information: List[
+            HeroicInformationState
+        ] = []
 
-    for requirement in items:
-        status = requirement.status
+        if information:
+            for item in information:
+                self.add_information(item)
 
-        if status in {
-            InformationRequirementStatus.UNKNOWN,
-            InformationRequirementStatus.MISSING,
-        }:
-            missing.append(requirement.information_id)
-
-        elif status == InformationRequirementStatus.PARTIAL:
-            partial.append(requirement.information_id)
-
-        elif status == InformationRequirementStatus.STALE:
-            stale.append(requirement.information_id)
-
-        elif status == InformationRequirementStatus.AMBIGUOUS:
-            ambiguous.append(requirement.information_id)
-
-        elif status == InformationRequirementStatus.CONTRADICTED:
-            contradicted.append(requirement.information_id)
-
-        if not self._is_sufficient(requirement):
-            insufficient.append(requirement.information_id)
-
-        if (
-            requirement.critical
-            and not self._is_sufficient(requirement)
+    def add_information(
+        self,
+        information: HeroicInformationState,
+    ) -> HeroicInformationState:
+        if not isinstance(
+            information,
+            HeroicInformationState,
         ):
-            critical_missing.append(
-                requirement.information_id
+            raise TypeError(
+                "information must be a "
+                "HeroicInformationState instance."
             )
 
-    sufficient = (
-        bool(items)
-        and not insufficient
-    )
-
-    critical_blocked = bool(critical_missing)
-
-    return {
-        "sufficient": sufficient,
-        "critical_blocked": critical_blocked,
-        "total_requirements": len(items),
-        "missing": missing,
-        "partial": partial,
-        "stale": stale,
-        "ambiguous": ambiguous,
-        "contradicted": contradicted,
-        "insufficient": insufficient,
-        "critical_missing": critical_missing,
-    }
-
-def is_sufficient(
-    self,
-    requirements: Iterable[HeroicInformationState],
-) -> bool:
-    """Return whether all supplied requirements are sufficient."""
-    result = self.evaluate(requirements)
-    return bool(result["sufficient"])
-
-def is_critically_blocked(
-    self,
-    requirements: Iterable[HeroicInformationState],
-) -> bool:
-    """Return whether unresolved critical information blocks progress."""
-    result = self.evaluate(requirements)
-    return bool(result["critical_blocked"])
-
-def critical_missing(
-    self,
-    requirements: Iterable[HeroicInformationState],
-) -> List[HeroicInformationState]:
-    """Return unresolved critical requirements."""
-    return [
-        requirement
-        for requirement in requirements
-        if (
-            requirement.critical
-            and not self._is_sufficient(requirement)
+        existing = self.get_information(
+            information.information_id
         )
-    ]
 
-def unresolved(
-    self,
-    requirements: Iterable[HeroicInformationState],
-) -> List[HeroicInformationState]:
-    """Return requirements that are not sufficiently resolved."""
-    return [
-        requirement
-        for requirement in requirements
-        if not self._is_sufficient(requirement)
-    ]
+        if existing is not None:
+            index = self._information.index(existing)
+            self._information[index] = information
+        else:
+            self._information.append(information)
 
-def _is_sufficient(
-    self,
-    requirement: HeroicInformationState,
-) -> bool:
-    """
-    Apply conservative sufficiency rules to one requirement.
-    """
-    if not requirement.required:
-        return True
+        return information
 
-    if requirement.status in {
-        InformationRequirementStatus.UNKNOWN,
-        InformationRequirementStatus.MISSING,
-        InformationRequirementStatus.PARTIAL,
-        InformationRequirementStatus.STALE,
-        InformationRequirementStatus.AMBIGUOUS,
-        InformationRequirementStatus.CONTRADICTED,
-        InformationRequirementStatus.REJECTED,
-    }:
-        return False
+    def remove_information(
+        self,
+        information_id: str,
+    ) -> Optional[HeroicInformationState]:
+        information = self.get_information(
+            information_id
+        )
 
-    if requirement.status == InformationRequirementStatus.VERIFIED:
-        return True
+        if information is None:
+            return None
 
-    if requirement.status != InformationRequirementStatus.AVAILABLE:
-        return False
+        self._information.remove(information)
+        return information
 
-    if (
-        requirement.confidence
-        < self.minimum_confidence
-    ):
-        return False
+    def get_information(
+        self,
+        information_id: str,
+    ) -> Optional[HeroicInformationState]:
+        for information in self._information:
+            if information.information_id == information_id:
+                return information
 
-    if (
-        requirement.evidence_required
-        and not requirement.verification_required
-    ):
-        return False
+        return None
 
-    return True
+    def list_all(
+        self,
+    ) -> List[HeroicInformationState]:
+        return list(self._information)
 
-@staticmethod
-def _clamp(
-    value: float,
-) -> float:
-    """Clamp a threshold to the normalized 0.0–1.0 range."""
-    return max(0.0, min(1.0, float(value)))
+    def required(
+        self,
+    ) -> List[HeroicInformationState]:
+        return [
+            information
+            for information in self._information
+            if information.required
+        ]
+
+    def missing(
+        self,
+    ) -> List[HeroicInformationState]:
+        return [
+            information
+            for information in self._information
+            if not information.is_usable()
+        ]
+
+    def missing_required(
+        self,
+    ) -> List[HeroicInformationState]:
+        return [
+            information
+            for information in self.required()
+            if not information.is_usable()
+        ]
+
+    def blocking(
+        self,
+    ) -> List[HeroicInformationState]:
+        return [
+            information
+            for information in self._information
+            if information.is_blocking()
+        ]
+
+    def is_sufficient(self) -> bool:
+        return not self.missing_required()
+
+    def is_sufficient_for_execution(self) -> bool:
+        return (
+            self.is_sufficient()
+            and not self.blocking()
+        )
+
+    def missing_information_records(
+        self,
+    ) -> List[HeroicMissingInformation]:
+        return [
+            HeroicMissingInformation.from_information(
+                information
+            )
+            for information in self.missing()
+        ]
+
+    def critical_missing(
+        self,
+    ) -> List[HeroicInformationState]:
+        return [
+            information
+            for information in self.missing_required()
+            if information.importance
+            == InformationImportance.CRITICAL
+        ]
+
+    def resolve(
+        self,
+        information_id: str,
+        value: object,
+        source: str = "",
+        verified: bool = False,
+    ) -> HeroicInformationState:
+        information = self._require(information_id)
+
+        information.set_value(value, source)
+
+        if verified:
+            information.mark_verified()
+
+        return information
+
+    def _require(
+        self,
+        information_id: str,
+    ) -> HeroicInformationState:
+        information = self.get_information(
+            information_id
+        )
+
+        if information is None:
+            raise KeyError(
+                f"Unknown HEROIC information: "
+                f"{information_id}"
+            )
+
+        return information
+
+    def clear(self) -> None:
+        self._information.clear()
+
+    def to_dict(self) -> List[dict]:
+        return [
+            information.to_dict()
+            for information in self._information
+            ]
