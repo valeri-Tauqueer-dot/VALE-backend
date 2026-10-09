@@ -1,19 +1,15 @@
-"""
-HEROIC STATE PACKAGE
+"""HEROIC mission state package."""
 
-Foundational state definitions for the HEROIC Brain.
+from .mission_state import (
+HeroicMissionState,
+MissionStatus,
+InformationState,
+EpistemicStatus,
+)
 
-HEROIC state represents the mission/objective context that HEROIC
-needs in order to understand, plan, coordinate, monitor, and
-complete a VALE objective.
-
-This package intentionally contains only foundational state.
-Higher-level planning, routing, execution, verification, and
-replanning intelligence will be added in separate modules.
-"""
-
-from .mission_state import HeroicMissionState
-
-__all__ = [
-    "HeroicMissionState",
+all = [
+"HeroicMissionState",
+"MissionStatus",
+"InformationState",
+"EpistemicStatus",
 ]
