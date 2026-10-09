@@ -1,6 +1,14 @@
+"""
+HEROIC TASK ENGINE
+
+Converts a HEROIC objective into structured tasks.
+This engine creates and classifies tasks; it does not execute them.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from HEROIC.Tasks.task_state import (
     HeroicTaskState,
@@ -11,38 +19,39 @@ from HEROIC.objectives.objective_state import HeroicObjectiveState
 
 
 class HeroicTaskEngine:
-    """
-    Converts a HEROIC objective into structured tasks.
+    """Creates structured tasks from objectives."""
 
-    This engine creates and classifies tasks. It does not execute
-    tasks, activate brains, or verify task results.
-    """
+    VERSION = "0.2.0"
 
     def __init__(self) -> None:
         self.engine_name = "HEROIC_TASK_ENGINE"
-        self.version = "0.2.0"
-        self._next_task_number = 1
+        self.version = self.VERSION
+
+    @staticmethod
+    def _new_task_id() -> str:
+        return f"heroic_task_{uuid4().hex}"
 
     def create_tasks(
         self,
         objective_state: HeroicObjectiveState,
         context: Optional[Dict[str, Any]] = None,
     ) -> List[HeroicTaskState]:
-        """Create an initial task set for an objective."""
+        """Create the initial task set for an objective."""
+
+        if objective_state is None:
+            raise ValueError("objective_state must not be None.")
+
+        if not isinstance(objective_state.description, str):
+            return []
+
         if not objective_state.description.strip():
             return []
 
-        tasks: List[HeroicTaskState] = []
+        tasks = [
+            self._create_primary_task(objective_state, context)
+        ]
 
-        primary_task = self._create_primary_task(
-            objective_state=objective_state,
-            context=context,
-        )
-        tasks.append(primary_task)
-
-        information_task = self._create_required_information_task(
-            objective_state
-        )
+        information_task = self._create_information_task(objective_state)
         if information_task is not None:
             tasks.append(information_task)
 
@@ -50,24 +59,9 @@ class HeroicTaskEngine:
         if analysis_task is not None:
             tasks.append(analysis_task)
 
-        verification_task = self._create_verification_task(
-            objective_state
-        )
+        verification_task = self._create_verification_task(objective_state)
         if verification_task is not None:
             tasks.append(verification_task)
-
-        # Assign IDs and connect every generated task to the objective.
-        for task in tasks:
-            if not task.task_id:
-                task.task_id = self._generate_task_id()
-
-            if task.task_id not in objective_state.task_ids:
-                objective_state.add_task(task.task_id)
-
-        # The primary task is the first task. Later tasks depend on it
-        # so that they cannot be treated as independent work.
-        for task in tasks[1:]:
-            task.add_dependency(primary_task.task_id)
 
         return tasks
 
@@ -79,18 +73,14 @@ class HeroicTaskEngine:
         goal_id: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
     ) -> HeroicTaskState:
-        """Create one task from an explicit description."""
-        description = str(description).strip()
+        """Create one explicitly defined task."""
 
-        if not description:
-            raise ValueError("Task description cannot be empty.")
-
-        if isinstance(task_type, str):
-            task_type = TaskType(task_type.lower())
+        if not isinstance(description, str) or not description.strip():
+            raise ValueError("description must be a non-empty string.")
 
         task = HeroicTaskState(
-            task_id=self._generate_task_id(),
-            description=description,
+            task_id=self._new_task_id(),
+            description=description.strip(),
             task_type=task_type,
             status=TaskStatus.CREATED,
             objective_id=objective_id,
@@ -100,70 +90,61 @@ class HeroicTaskEngine:
         self._apply_context(task, context)
         return task
 
-    def _generate_task_id(self) -> str:
-        task_id = f"heroic_task_{self._next_task_number:06d}"
-        self._next_task_number += 1
-        return task_id
-
     def _create_primary_task(
         self,
         objective_state: HeroicObjectiveState,
         context: Optional[Dict[str, Any]],
     ) -> HeroicTaskState:
-        task = self.create_task(
-            description=objective_state.description,
-            task_type=self.classify_task(
-                objective_state.description
-            ),
+        task = HeroicTaskState(
+            task_id=self._new_task_id(),
+            description=objective_state.description.strip(),
+            task_type=TaskType.ANALYSIS,
+            status=TaskStatus.CREATED,
             objective_id=objective_state.objective_id,
-            goal_id=objective_state.goal_id,
-            context=context,
         )
 
         for criterion in objective_state.success_criteria:
-            task.add_success_criterion(criterion)
+            task.add_success_criterion(str(criterion))
 
-        task.constraints.extend(
-            item
-            for item in objective_state.constraints
-            if item not in task.constraints
-        )
-        task.assumptions.extend(
-            item
-            for item in objective_state.assumptions
-            if item not in task.assumptions
-        )
+        for constraint in objective_state.constraints:
+            if constraint:
+                task.constraints.append(str(constraint))
+
+        for assumption in objective_state.assumptions:
+            if assumption:
+                task.assumptions.append(str(assumption))
 
         for blocker in objective_state.blockers:
-            task.add_blocker(blocker)
+            if blocker:
+                task.add_blocker(str(blocker))
 
-        for outcome in objective_state.required_outcomes:
-            task.add_expected_output(outcome)
-
+        self._apply_context(task, context)
         return task
 
-    def _create_required_information_task(
+    def _create_information_task(
         self,
         objective_state: HeroicObjectiveState,
     ) -> Optional[HeroicTaskState]:
-        if not objective_state.unresolved_questions:
+        questions = list(objective_state.unresolved_questions or [])
+        if not questions:
             return None
 
-        task = self.create_task(
+        task = HeroicTaskState(
+            task_id=self._new_task_id(),
             description=(
-                "Resolve the unresolved information required "
-                "by the objective."
+                "Resolve or explicitly identify the information "
+                "gaps relevant to the objective."
             ),
             task_type=TaskType.DATA_RETRIEVAL,
+            status=TaskStatus.CREATED,
             objective_id=objective_state.objective_id,
-            goal_id=objective_state.goal_id,
         )
 
-        for question in objective_state.unresolved_questions:
-            task.add_expected_output(question)
+        for question in questions:
+            task.add_expected_output(str(question))
 
         task.add_success_criterion(
-            "Required information has been identified or resolved."
+            "Information gaps are documented and their resolution status is clear."
         )
         return task
 
@@ -171,24 +152,26 @@ class HeroicTaskEngine:
         self,
         objective_state: HeroicObjectiveState,
     ) -> Optional[HeroicTaskState]:
-        if not objective_state.required_outcomes:
+        outcomes = list(objective_state.required_outcomes or [])
+        if not outcomes:
             return None
 
-        task = self.create_task(
+        task = HeroicTaskState(
+            task_id=self._new_task_id(),
             description=(
                 "Analyze the objective requirements and determine "
                 "the required outcome."
             ),
             task_type=TaskType.REASONING,
+            status=TaskStatus.CREATED,
             objective_id=objective_state.objective_id,
-            goal_id=objective_state.goal_id,
         )
 
-        for outcome in objective_state.required_outcomes:
-            task.add_expected_output(outcome)
+        for outcome in outcomes:
+            task.add_expected_output(str(outcome))
 
         task.add_success_criterion(
-            "The required outcome has been logically determined."
+            "The required outcome is determined using the available evidence."
         )
         return task
 
@@ -196,22 +179,27 @@ class HeroicTaskEngine:
         self,
         objective_state: HeroicObjectiveState,
     ) -> Optional[HeroicTaskState]:
-        if not objective_state.success_criteria:
+        criteria = list(objective_state.success_criteria or [])
+        if not criteria:
             return None
 
-        task = self.create_task(
+        task = HeroicTaskState(
+            task_id=self._new_task_id(),
             description=(
-                "Verify that the objective result satisfies "
-                "its success criteria."
+                "Verify whether the objective result satisfies "
+                "the defined success criteria."
             ),
             task_type=TaskType.VERIFICATION,
+            status=TaskStatus.CREATED,
             objective_id=objective_state.objective_id,
-            goal_id=objective_state.goal_id,
         )
 
-        for criterion in objective_state.success_criteria:
-            task.add_success_criterion(criterion)
+        for criterion in criteria:
+            task.add_success_criterion(str(criterion))
 
+        task.add_expected_output(
+            "Verification result with supporting evidence and any unmet criteria."
+        )
         return task
 
     def _apply_context(
@@ -219,25 +207,29 @@ class HeroicTaskEngine:
         task: HeroicTaskState,
         context: Optional[Dict[str, Any]],
     ) -> None:
-        """Apply explicitly supplied context without guessing values."""
-        if not context:
+        """Apply explicitly supplied context without replacing task state."""
+
+        if not isinstance(context, dict):
             return
 
         inputs = context.get("inputs")
 
         if isinstance(inputs, dict):
             task.inputs.update(inputs)
-        elif isinstance(inputs, list):
-            for index, item in enumerate(inputs, start=1):
-                task.inputs[f"input_{index}"] = item
+        elif isinstance(inputs, (list, tuple)):
+            for item in inputs:
+                key = f"input_{len(task.inputs) + 1}"
+                task.inputs[key] = item
 
         expected_outputs = context.get("expected_outputs")
 
         if isinstance(expected_outputs, str):
-            task.add_expected_output(expected_outputs)
+            if expected_outputs.strip():
+                task.add_expected_output(expected_outputs.strip())
         elif isinstance(expected_outputs, (list, tuple, set)):
             for output in expected_outputs:
-                task.add_expected_output(str(output))
+                if output is not None and str(output).strip():
+                    task.add_expected_output(str(output).strip())
 
         constraints = context.get("constraints")
 
@@ -248,21 +240,43 @@ class HeroicTaskEngine:
                     task.constraints.append(item)
         elif isinstance(constraints, (list, tuple, set)):
             for constraint in constraints:
-                item = str(constraint)
-                if item not in task.constraints:
+                item = str(constraint).strip()
+                if item and item not in task.constraints:
                     task.constraints.append(item)
 
         assumptions = context.get("assumptions")
 
         if isinstance(assumptions, (list, tuple, set)):
             for assumption in assumptions:
-                item = str(assumption)
-                if item not in task.assumptions:
+                item = str(assumption).strip()
+                if item and item not in task.assumptions:
                     task.assumptions.append(item)
 
+        capabilities = context.get("required_capabilities")
+        if isinstance(capabilities, (list, tuple, set)):
+            for capability in capabilities:
+                if capability:
+                    task.add_required_capability(str(capability))
+
+        brains = context.get("required_brains")
+        if isinstance(brains, (list, tuple, set)):
+            for brain in brains:
+                if brain:
+                    task.add_required_brain(str(brain))
+
+        success_criteria = context.get("success_criteria")
+        if isinstance(success_criteria, (list, tuple, set)):
+            for criterion in success_criteria:
+                if criterion:
+                    task.add_success_criterion(str(criterion))
+
     def classify_task(self, description: str) -> TaskType:
-        """Classify a task using deterministic text signals."""
-        text = str(description).lower().strip()
+        """Classify a task using deterministic keyword signals."""
+
+        if not isinstance(description, str) or not description.strip():
+            return TaskType.OTHER
+
+        text = description.lower().strip()
 
         if any(
             phrase in text
@@ -271,6 +285,7 @@ class HeroicTaskEngine:
                 "validate",
                 "check whether",
                 "confirm",
+                "test whether",
             )
         ):
             return TaskType.VERIFICATION
@@ -283,6 +298,7 @@ class HeroicTaskEngine:
                 "get data",
                 "find information",
                 "collect data",
+                "look up",
             )
         ):
             return TaskType.DATA_RETRIEVAL
@@ -293,6 +309,7 @@ class HeroicTaskEngine:
                 "research",
                 "investigate",
                 "explore",
+                "survey",
             )
         ):
             return TaskType.RESEARCH
@@ -301,8 +318,9 @@ class HeroicTaskEngine:
             phrase in text
             for phrase in (
                 "decide",
-                "decision",
+                "make a decision",
                 "recommend",
+                "evaluate options",
             )
         ):
             return TaskType.DECISION_SUPPORT
@@ -314,6 +332,8 @@ class HeroicTaskEngine:
                 "analyze",
                 "analyse",
                 "determine",
+                "compare",
+                "explain",
             )
         ):
             return TaskType.REASONING
@@ -327,8 +347,23 @@ class HeroicTaskEngine:
                 "execute",
                 "run",
                 "fix",
+                "modify",
             )
         ):
             return TaskType.ACTION
 
+        if any(
+            phrase in text
+            for phrase in (
+                "write a message",
+                "send a message",
+                "communicate",
+                "notify",
+            )
+        ):
+            return TaskType.COMMUNICATION
+
         return TaskType.OTHER
+
+
+__all__ = ["HeroicTaskEngine"]
