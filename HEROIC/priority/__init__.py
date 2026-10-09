@@ -1,7 +1,6 @@
-from .priority_engine import (
-HeroicPriorityEngine,
-)
+from .priority_engine import HeroicPriorityEngine
 
-all = [
-"HeroicPriorityEngine",
+
+__all__ = [
+    "HeroicPriorityEngine",
 ]
