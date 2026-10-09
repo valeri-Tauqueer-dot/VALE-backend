@@ -1,40 +1,16 @@
-"""
-HEROIC GOAL STATE
-
-Foundational representation of a larger mission goal.
-
-A goal describes the broader outcome HEROIC is trying to achieve.
-Objectives are the more concrete pieces that contribute toward
-that goal.
-
-This module defines state only.
-
-It does not:
-- interpret user intent
-- decompose goals
-- select capabilities
-- activate brains
-- execute tasks
-- verify results
-"""
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class GoalStatus(str, Enum):
-    """
-    Lifecycle status of a HEROIC goal.
-    """
-
-    UNDEFINED = "undefined"
-    IDENTIFIED = "identified"
-    REFINED = "refined"
-    READY = "ready"
-    IN_PROGRESS = "in_progress"
+    UNKNOWN = "unknown"
+    PENDING = "pending"
+    ACTIVE = "active"
+    ACHIEVED = "achieved"
     BLOCKED = "blocked"
-    COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
@@ -42,150 +18,139 @@ class GoalStatus(str, Enum):
 @dataclass
 class HeroicGoalState:
     """
-    Structured state representing a HEROIC mission goal.
+    Represents a goal that HEROIC is responsible for pursuing.
+
+    A goal is not considered achieved merely because a plan
+    exists. Achievement must be recorded explicitly.
     """
 
-    goal_id: str = ""
-
+    goal_id: str
+    name: str
     description: str = ""
 
-    status: GoalStatus = GoalStatus.UNDEFINED
+    status: GoalStatus = GoalStatus.PENDING
+    priority: float = 0.0
 
-    objective_ids: List[str] = field(default_factory=list)
+    success_criteria: List[str] = field(
+        default_factory=list
+    )
+    objective_ids: List[str] = field(
+        default_factory=list
+    )
+    parent_goal_id: str = ""
 
-    success_criteria: List[str] = field(default_factory=list)
+    progress: float = 0.0
+    blockers: List[str] = field(
+        default_factory=list
+    )
+    metadata: Dict[str, Any] = field(
+        default_factory=dict
+    )
 
-    constraints: List[str] = field(default_factory=list)
-
-    priorities: List[str] = field(default_factory=list)
-
-    assumptions: List[str] = field(default_factory=list)
-
-    unresolved_questions: List[str] = field(default_factory=list)
-
-    blockers: List[str] = field(default_factory=list)
-
-    parent_goal_id: Optional[str] = None
-
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def add_objective(self, objective_id: str) -> None:
-        """
-        Associate an objective with this goal.
-        """
-
-        if objective_id and objective_id not in self.objective_ids:
-            self.objective_ids.append(objective_id)
-
-    def add_success_criterion(self, criterion: str) -> None:
-        """
-        Add a condition required for goal completion.
-        """
-
+    def add_success_criterion(
+        self,
+        criterion: str,
+    ) -> None:
         if criterion and criterion not in self.success_criteria:
             self.success_criteria.append(criterion)
 
-    def add_constraint(self, constraint: str) -> None:
-        """
-        Add a constraint governing the goal.
-        """
+    def add_objective(
+        self,
+        objective_id: str,
+    ) -> None:
+        if objective_id and objective_id not in self.objective_ids:
+            self.objective_ids.append(objective_id)
 
-        if constraint and constraint not in self.constraints:
-            self.constraints.append(constraint)
-
-    def add_priority(self, priority: str) -> None:
-        """
-        Add a goal priority.
-        """
-
-        if priority and priority not in self.priorities:
-            self.priorities.append(priority)
-
-    def add_assumption(self, assumption: str) -> None:
-        """
-        Record an assumption associated with the goal.
-        """
-
-        if assumption and assumption not in self.assumptions:
-            self.assumptions.append(assumption)
-
-    def add_unresolved_question(self, question: str) -> None:
-        """
-        Record an unresolved question affecting the goal.
-        """
-
-        if question and question not in self.unresolved_questions:
-            self.unresolved_questions.append(question)
-
-    def add_blocker(self, blocker: str) -> None:
-        """
-        Record a condition preventing goal progress.
-        """
-
+    def add_blocker(
+        self,
+        blocker: str,
+    ) -> None:
         if blocker and blocker not in self.blockers:
             self.blockers.append(blocker)
 
-        self.status = GoalStatus.BLOCKED
+        if self.status != GoalStatus.CANCELLED:
+            self.status = GoalStatus.BLOCKED
 
-    def is_ready(self) -> bool:
-        """
-        Determine whether the goal is sufficiently defined
-        for downstream planning.
-        """
+    def remove_blocker(
+        self,
+        blocker: str,
+    ) -> bool:
+        if blocker not in self.blockers:
+            return False
 
-        return (
-            bool(self.description)
-            and self.status in {
-                GoalStatus.IDENTIFIED,
-                GoalStatus.REFINED,
-                GoalStatus.READY,
-            }
-            and not self.unresolved_questions
-            and not self.blockers
+        self.blockers.remove(blocker)
+
+        if (
+            not self.blockers
+            and self.status == GoalStatus.BLOCKED
+        ):
+            self.status = GoalStatus.PENDING
+
+        return True
+
+    def activate(self) -> None:
+        if self.status in {
+            GoalStatus.ACHIEVED,
+            GoalStatus.FAILED,
+            GoalStatus.CANCELLED,
+        }:
+            return
+
+        if self.blockers:
+            self.status = GoalStatus.BLOCKED
+        else:
+            self.status = GoalStatus.ACTIVE
+
+    def update_progress(
+        self,
+        progress: float,
+    ) -> None:
+        self.progress = max(
+            0.0,
+            min(100.0, float(progress)),
         )
 
-    def mark_in_progress(self) -> None:
-        """
-        Mark the goal as actively being pursued.
-        """
+    def mark_achieved(self) -> None:
+        self.status = GoalStatus.ACHIEVED
+        self.progress = 100.0
+        self.blockers.clear()
 
-        self.status = GoalStatus.IN_PROGRESS
-
-    def mark_completed(self) -> None:
-        """
-        Mark the goal as completed.
-        """
-
-        self.status = GoalStatus.COMPLETED
-
-    def mark_failed(self, reason: Optional[str] = None) -> None:
-        """
-        Mark the goal as failed.
-        """
-
-        if reason:
-            self.add_blocker(reason)
-
+    def mark_failed(self) -> None:
         self.status = GoalStatus.FAILED
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert goal state into a serializable dictionary.
-        """
+    def cancel(self) -> None:
+        self.status = GoalStatus.CANCELLED
 
+    def is_terminal(self) -> bool:
+        return self.status in {
+            GoalStatus.ACHIEVED,
+            GoalStatus.FAILED,
+            GoalStatus.CANCELLED,
+        }
+
+    def is_active(self) -> bool:
+        return self.status == GoalStatus.ACTIVE
+
+    def is_achieved(self) -> bool:
+        return self.status == GoalStatus.ACHIEVED
+
+    def is_blocked(self) -> bool:
+        return (
+            self.status == GoalStatus.BLOCKED
+            or bool(self.blockers)
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "goal_id": self.goal_id,
+            "name": self.name,
             "description": self.description,
             "status": self.status.value,
-            "objective_ids": list(self.objective_ids),
+            "priority": self.priority,
             "success_criteria": list(self.success_criteria),
-            "constraints": list(self.constraints),
-            "priorities": list(self.priorities),
-            "assumptions": list(self.assumptions),
-            "unresolved_questions": list(
-                self.unresolved_questions
-            ),
-            "blockers": list(self.blockers),
+            "objective_ids": list(self.objective_ids),
             "parent_goal_id": self.parent_goal_id,
+            "progress": self.progress,
+            "blockers": list(self.blockers),
             "metadata": dict(self.metadata),
-  }
+    }
