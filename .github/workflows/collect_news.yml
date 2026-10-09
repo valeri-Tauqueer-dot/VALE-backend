@@ -1,0 +1,27 @@
+name: Collect news
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install what the collector needs
+        run: pip install sqlalchemy psycopg2-binary requests
+
+      - name: Collect news
+        run: python -m search_engine.collect_news
+        env:
+          SEARCH_DB_URL_1: ${{ secrets.SEARCH_DB_URL_1 }}
