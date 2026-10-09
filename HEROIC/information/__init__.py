@@ -1,21 +1,22 @@
 from .information_state import (
-InformationRequirementStatus,
-InformationSourceType,
-HeroicInformationState,
-)
-
-from .sufficiency_engine import (
-HeroicInformationSufficiencyEngine,
+    HeroicInformationState,
+    InformationImportance,
+    InformationStatus,
 )
 
 from .missing_information import (
-HeroicMissingInformation,
+    HeroicMissingInformation,
 )
 
-all = [
-"InformationRequirementStatus",
-"InformationSourceType",
-"HeroicInformationState",
-"HeroicInformationSufficiencyEngine",
-"HeroicMissingInformation",
+from .sufficiency_engine import (
+    HeroicInformationSufficiencyEngine,
+)
+
+
+__all__ = [
+    "HeroicInformationState",
+    "InformationImportance",
+    "InformationStatus",
+    "HeroicMissingInformation",
+    "HeroicInformationSufficiencyEngine",
 ]
