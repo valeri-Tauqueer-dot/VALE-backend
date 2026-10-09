@@ -1,12 +1,15 @@
-"""
-HEROIC GOALS PACKAGE
+from .goal_state import (
+    GoalStatus,
+    HeroicGoalState,
+)
 
-Foundational goal representations for the HEROIC Brain.
-"""
+from .goal_engine import (
+    HeroicGoalEngine,
+)
 
-from .goal_state import HeroicGoalState, GoalStatus
 
 __all__ = [
-    "HeroicGoalState",
     "GoalStatus",
+    "HeroicGoalState",
+    "HeroicGoalEngine",
 ]
