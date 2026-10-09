@@ -1,12 +1,15 @@
-"""
-HEROIC OBJECTIVES PACKAGE
+from .objective_state import (
+    ObjectiveStatus,
+    HeroicObjectiveState,
+)
 
-Foundational objective representations for the HEROIC Brain.
-"""
+from .objective_engine import (
+    HeroicObjectiveEngine,
+)
 
-from .objective_state import HeroicObjectiveState, ObjectiveStatus
 
 __all__ = [
-    "HeroicObjectiveState",
     "ObjectiveStatus",
+    "HeroicObjectiveState",
+    "HeroicObjectiveEngine",
 ]
