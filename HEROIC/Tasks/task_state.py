@@ -1,13 +1,15 @@
-from __future__ import annotations
+"""
+HEROIC TASK STATE
+
+Defines the lifecycle and state of one HEROIC task.
+"""
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 
 class TaskStatus(str, Enum):
-    """Lifecycle status of a HEROIC task."""
-
     CREATED = "created"
     READY = "ready"
     WAITING = "waiting"
@@ -20,8 +22,6 @@ class TaskStatus(str, Enum):
 
 
 class TaskType(str, Enum):
-    """High-level classification of a HEROIC task."""
-
     ANALYSIS = "analysis"
     RESEARCH = "research"
     REASONING = "reasoning"
@@ -35,8 +35,6 @@ class TaskType(str, Enum):
 
 @dataclass
 class HeroicTaskState:
-    """Structured state representing one concrete HEROIC task."""
-
     task_id: str = ""
     description: str = ""
     task_type: TaskType = TaskType.OTHER
@@ -58,208 +56,136 @@ class HeroicTaskState:
     assumptions: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
-        self.task_id = str(self.task_id).strip()
-        self.description = str(self.description).strip()
-
-        if isinstance(self.task_type, str):
-            self.task_type = TaskType(self.task_type.lower())
-
-        if isinstance(self.status, str):
-            self.status = TaskStatus(self.status.lower())
-
-        self.dependency_task_ids = list(
-            dict.fromkeys(self.dependency_task_ids)
-        )
-        self.required_capabilities = list(
-            dict.fromkeys(self.required_capabilities)
-        )
-        self.required_brains = list(
-            dict.fromkeys(self.required_brains)
-        )
-
     def add_dependency(self, task_id: str) -> None:
-        """Add a dependency without creating a self-dependency."""
-        task_id = str(task_id).strip()
-
-        if not task_id:
-            raise ValueError("Dependency task_id cannot be empty.")
-
-        if self.task_id and task_id == self.task_id:
-            raise ValueError("A task cannot depend on itself.")
-
-        if task_id not in self.dependency_task_ids:
+        if (
+            task_id
+            and task_id != self.task_id
+            and task_id not in self.dependency_task_ids
+        ):
             self.dependency_task_ids.append(task_id)
 
     def add_required_capability(self, capability: str) -> None:
-        capability = str(capability).strip()
-
-        if (
-            capability
-            and capability not in self.required_capabilities
-        ):
+        if capability and capability not in self.required_capabilities:
             self.required_capabilities.append(capability)
 
     def add_required_brain(self, brain: str) -> None:
-        brain = str(brain).strip()
-
         if brain and brain not in self.required_brains:
             self.required_brains.append(brain)
 
     def add_expected_output(self, output: str) -> None:
-        output = str(output).strip()
-
         if output and output not in self.expected_outputs:
             self.expected_outputs.append(output)
 
     def add_success_criterion(self, criterion: str) -> None:
-        criterion = str(criterion).strip()
-
         if criterion and criterion not in self.success_criteria:
             self.success_criteria.append(criterion)
 
     def add_blocker(self, blocker: str) -> None:
-        blocker = str(blocker).strip()
-
         if blocker and blocker not in self.blockers:
             self.blockers.append(blocker)
 
-        if blocker and self.status not in {
+        if self.status not in (
             TaskStatus.COMPLETED,
-            TaskStatus.FAILED,
             TaskStatus.CANCELLED,
-        }:
+        ):
             self.status = TaskStatus.BLOCKED
 
-    def remove_blocker(self, blocker: str) -> None:
-        if blocker in self.blockers:
-            self.blockers.remove(blocker)
+    def remove_blocker(self, blocker: str) -> bool:
+        if blocker not in self.blockers:
+            return False
 
-        if (
-            not self.blockers
-            and self.status == TaskStatus.BLOCKED
-        ):
-            self.status = TaskStatus.WAITING
+        self.blockers.remove(blocker)
+
+        if not self.blockers and self.status == TaskStatus.BLOCKED:
+            self.status = TaskStatus.CREATED
+
+        return True
+
+    def dependencies_satisfied(
+        self,
+        task_states: Dict[str, "HeroicTaskState"],
+    ) -> bool:
+        """Return true only when every dependency exists and is completed."""
+
+        for dependency_id in self.dependency_task_ids:
+            dependency = task_states.get(dependency_id)
+
+            if dependency is None:
+                return False
+
+            if dependency.status != TaskStatus.COMPLETED:
+                return False
+
+        return True
 
     def is_ready(
         self,
-        completed_task_ids: Optional[Set[str]] = None,
+        task_states: Optional[Dict[str, "HeroicTaskState"]] = None,
     ) -> bool:
-        """
-        Check whether this task is eligible to execute.
+        """Check readiness without assuming missing dependencies are complete."""
 
-        If dependencies exist, their completion must be confirmed
-        by supplying completed_task_ids. Missing confirmation is
-        never treated as successful dependency completion.
-        """
-        if not self.description:
-            return False
-
-        if self.status != TaskStatus.READY:
+        if not self.description.strip():
             return False
 
         if self.blockers:
             return False
 
-        if not self.dependency_task_ids:
-            return True
-
-        if completed_task_ids is None:
-            return False
-
-        completed = set(completed_task_ids)
-
-        return all(
-            dependency_id in completed
-            for dependency_id in self.dependency_task_ids
-        )
-
-    def mark_ready(
-        self,
-        completed_task_ids: Optional[Set[str]] = None,
-    ) -> bool:
-        """Mark ready only when blockers and dependencies permit it."""
-        if self.blockers:
-            self.status = TaskStatus.BLOCKED
+        if self.status not in (
+            TaskStatus.CREATED,
+            TaskStatus.READY,
+            TaskStatus.WAITING,
+        ):
             return False
 
         if self.dependency_task_ids:
-            if completed_task_ids is None:
-                self.status = TaskStatus.WAITING
+            if task_states is None:
                 return False
 
-            completed = set(completed_task_ids)
-
-            if not all(
-                dependency_id in completed
-                for dependency_id in self.dependency_task_ids
-            ):
-                self.status = TaskStatus.WAITING
+            if not self.dependencies_satisfied(task_states):
                 return False
 
-        if not self.description:
+        return True
+
+    def mark_ready(
+        self,
+        task_states: Optional[Dict[str, "HeroicTaskState"]] = None,
+    ) -> bool:
+        if not self.is_ready(task_states):
             return False
 
         self.status = TaskStatus.READY
         return True
 
     def mark_running(self) -> None:
-        if self.status in {
-            TaskStatus.COMPLETED,
-            TaskStatus.FAILED,
-            TaskStatus.CANCELLED,
-        }:
-            raise ValueError(
-                f"Cannot run a task with status '{self.status.value}'."
-            )
-
         if self.blockers:
             raise ValueError("Cannot run a task while blockers remain.")
+
+        if self.status != TaskStatus.READY:
+            raise ValueError("A task must be READY before it can run.")
 
         self.status = TaskStatus.RUNNING
 
     def mark_verifying(self) -> None:
         if self.status != TaskStatus.RUNNING:
-            raise ValueError(
-                "Only a running task can enter verification."
-            )
+            raise ValueError("Only a RUNNING task can enter verification.")
 
         self.status = TaskStatus.VERIFYING
 
     def mark_completed(self) -> None:
-        if self.status in {
-            TaskStatus.FAILED,
-            TaskStatus.CANCELLED,
-        }:
+        if self.status != TaskStatus.VERIFYING:
             raise ValueError(
-                f"Cannot complete a task with status '{self.status.value}'."
-            )
-
-        if self.blockers:
-            raise ValueError(
-                "Cannot complete a task while blockers remain."
+                "A task must be VERIFYING before it can be completed."
             )
 
         self.status = TaskStatus.COMPLETED
 
     def mark_failed(self, reason: Optional[str] = None) -> None:
-        if self.status == TaskStatus.COMPLETED:
-            raise ValueError("A completed task cannot be marked failed.")
-
         if reason:
-            if reason not in self.blockers:
-                self.blockers.append(reason)
+            self.add_blocker(reason)
 
         self.status = TaskStatus.FAILED
 
-    def mark_cancelled(self) -> None:
-        if self.status == TaskStatus.COMPLETED:
-            raise ValueError("A completed task cannot be cancelled.")
-
-        self.status = TaskStatus.CANCELLED
-
     def to_dict(self) -> Dict[str, Any]:
-        """Convert task state into a serializable dictionary."""
         return {
             "task_id": self.task_id,
             "description": self.description,
@@ -278,4 +204,4 @@ class HeroicTaskState:
             "blockers": list(self.blockers),
             "assumptions": list(self.assumptions),
             "metadata": dict(self.metadata),
-            }
+    }
