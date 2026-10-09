@@ -1,21 +1,9 @@
 """
 HEROIC TASK PLANNER
 
-Purpose:
-    Build a structured plan from an objective and its tasks.
-
-Responsibilities:
-    - Register tasks and collect their requirements.
-    - Preserve objective-level requirements.
-    - Establish an initial task order.
-    - Identify preliminary parallel task groups.
-    - Apply explicitly supplied context.
-    - Evaluate plan readiness.
-
-This planner does not execute tasks, allocate resources,
-activate brains, or optimize runtime performance.
-
-ALPHA remains responsible for execution optimization.
+Builds a preliminary plan from an objective and its tasks.
+HEROIC defines what must be accomplished; ALPHA optimizes execution.
+This planner does not execute tasks or activate brains.
 """
 
 from __future__ import annotations
@@ -32,11 +20,13 @@ from HEROIC.planning.plan_state import (
 
 
 class HeroicTaskPlanner:
-    """Create a structured HEROIC plan from objective tasks."""
+    """Create and validate a preliminary HEROIC task plan."""
+
+    VERSION = "0.3.0"
 
     def __init__(self) -> None:
         self.planner_name = "HEROIC_TASK_PLANNER"
-        self.version = "0.2.0"
+        self.version = self.VERSION
 
     def build_plan(
         self,
@@ -46,7 +36,7 @@ class HeroicTaskPlanner:
         goal_id: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
     ) -> HeroicPlanState:
-        """Build a preliminary plan from an objective and its tasks."""
+        """Build a plan and check its task references and dependencies."""
 
         if objective_state is None:
             raise ValueError("objective_state must not be None.")
@@ -58,8 +48,10 @@ class HeroicTaskPlanner:
 
         task_ids = [task.task_id for task in task_list]
 
-        if any(not isinstance(task_id, str) or not task_id.strip()
-               for task_id in task_ids):
+        if any(
+            not isinstance(task_id, str) or not task_id.strip()
+            for task_id in task_ids
+        ):
             raise ValueError("Every task must have a non-empty task_id.")
 
         if len(task_ids) != len(set(task_ids)):
@@ -84,6 +76,7 @@ class HeroicTaskPlanner:
         self._build_initial_order(plan, task_list)
         self._build_parallel_groups(plan, task_list)
         self._apply_context(plan, context)
+        self._validate_dependencies(plan, task_list)
         self._evaluate_readiness(plan)
 
         return plan
@@ -93,8 +86,6 @@ class HeroicTaskPlanner:
         plan: HeroicPlanState,
         tasks: List[HeroicTaskState],
     ) -> None:
-        """Register task IDs and collect task-level requirements."""
-
         for task in tasks:
             plan.add_task(task.task_id)
 
@@ -124,8 +115,6 @@ class HeroicTaskPlanner:
         plan: HeroicPlanState,
         objective: HeroicObjectiveState,
     ) -> None:
-        """Preserve objective-level requirements at plan level."""
-
         for criterion in objective.success_criteria:
             plan.add_success_criterion(criterion)
 
@@ -149,8 +138,6 @@ class HeroicTaskPlanner:
         plan: HeroicPlanState,
         tasks: List[HeroicTaskState],
     ) -> None:
-        """Assign a preliminary plan type before dependency analysis."""
-
         if len(tasks) <= 1:
             plan.plan_type = PlanType.SINGLE_TASK
         else:
@@ -161,12 +148,7 @@ class HeroicTaskPlanner:
         plan: HeroicPlanState,
         tasks: List[HeroicTaskState],
     ) -> None:
-        """
-        Preserve task creation order as the preliminary order.
-
-        The Dependency Planner must validate or replace this order
-        before downstream execution relies on it.
-        """
+        """Record the proposed order; dependency validation follows."""
 
         for task in tasks:
             plan.add_ordered_task(task.task_id)
@@ -177,30 +159,18 @@ class HeroicTaskPlanner:
         tasks: List[HeroicTaskState],
     ) -> None:
         """
-        Record a preliminary group of tasks without declared
-        dependencies. This does not authorize parallel execution.
+        Do not infer safe parallelism solely from missing dependencies.
+        Dependency and resource analysis must establish that separately.
         """
 
-        independent_tasks = [
-            task.task_id
-            for task in tasks
-            if not task.dependency_task_ids
-        ]
-
-        if len(independent_tasks) > 1:
-            plan.add_parallel_group(independent_tasks)
-
-            if plan.plan_type == PlanType.MULTI_TASK:
-                plan.plan_type = PlanType.PARALLEL
+        return
 
     def _apply_context(
         self,
         plan: HeroicPlanState,
         context: Optional[Dict[str, Any]],
     ) -> None:
-        """Apply explicitly supplied planning context."""
-
-        if not context:
+        if not isinstance(context, dict):
             return
 
         inputs = context.get("inputs")
@@ -216,9 +186,61 @@ class HeroicTaskPlanner:
                 context["verification_required"]
             )
 
-    def _evaluate_readiness(self, plan: HeroicPlanState) -> None:
-        """Set the initial plan status from its current requirements."""
+    def _validate_dependencies(
+        self,
+        plan: HeroicPlanState,
+        tasks: List[HeroicTaskState],
+    ) -> None:
+        """Block plans with missing dependencies or dependency cycles."""
 
+        task_map = {task.task_id: task for task in tasks}
+        task_ids = set(task_map)
+
+        for task in tasks:
+            for dependency_id in task.dependency_task_ids:
+                if dependency_id not in task_ids:
+                    plan.add_blocker(
+                        f"Task {task.task_id} references missing dependency "
+                        f"{dependency_id}."
+                    )
+
+                if dependency_id == task.task_id:
+                    plan.add_blocker(
+                        f"Task {task.task_id} depends on itself."
+                    )
+
+        if plan.blockers:
+            return
+
+        visiting = set()
+        visited = set()
+
+        def has_cycle(task_id: str) -> bool:
+            if task_id in visiting:
+                return True
+
+            if task_id in visited:
+                return False
+
+            visiting.add(task_id)
+
+            for dependency_id in task_map[task_id].dependency_task_ids:
+                if has_cycle(dependency_id):
+                    return True
+
+            visiting.remove(task_id)
+            visited.add(task_id)
+            return False
+
+        for task_id in task_map:
+            if has_cycle(task_id):
+                plan.add_blocker(
+                    "Task dependency cycle detected; the plan cannot "
+                    "be considered ready."
+                )
+                return
+
+    def _evaluate_readiness(self, plan: HeroicPlanState) -> None:
         if plan.blockers:
             plan.status = PlanStatus.BLOCKED
         elif plan.unresolved_questions:
