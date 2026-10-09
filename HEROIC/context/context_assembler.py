@@ -1,255 +1,90 @@
-from future import annotations
+from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Dict, Optional
 
-from HEROIC.context.context_state import (
-ContextScope,
-ContextSource,
-HeroicContextState,
-)
+from .context_state import HeroicContextState
+
 
 class HeroicContextAssembler:
-"""
-Assembles structured context for HEROIC mission planning.
-
-The assembler combines explicitly supplied information into a
-single contextual state. It does not invent missing facts and
-does not perform external retrieval by itself.
-"""
-
-def __init__(
-    self,
-    *,
-    default_scope: ContextScope = ContextScope.MISSION,
-) -> None:
-    self.default_scope = default_scope
-
-def create_context(
-    self,
-    context_id: str,
-    *,
-    user_request: str = "",
-    scope: Optional[ContextScope] = None,
-    mission_id: str = "",
-    goal_id: str = "",
-    objective_id: str = "",
-    task_id: str = "",
-) -> HeroicContextState:
     """
-    Create an empty contextual state.
+    Assembles information into a single HEROIC context state.
+
+    Existing context is updated only with explicitly supplied
+    information. Missing information is not invented.
     """
-    if not context_id:
-        raise ValueError("Context ID cannot be empty.")
 
-    return HeroicContextState(
-        context_id=context_id,
-        scope=scope or self.default_scope,
-        mission_id=mission_id,
-        goal_id=goal_id,
-        objective_id=objective_id,
-        task_id=task_id,
-        user_request=user_request,
-    )
+    def assemble(
+        self,
+        user_request: str = "",
+        user_context: Optional[Dict[str, Any]] = None,
+        system_context: Optional[Dict[str, Any]] = None,
+        environmental_context: Optional[Dict[str, Any]] = None,
+        existing_context: Optional[
+            HeroicContextState
+        ] = None,
+    ) -> HeroicContextState:
+        context = (
+            existing_context
+            if existing_context is not None
+            else HeroicContextState()
+        )
 
-def assemble(
-    self,
-    context: HeroicContextState,
-    *,
-    facts: Optional[Mapping[str, Any]] = None,
-    signals: Optional[Mapping[str, Any]] = None,
-    assumptions: Optional[Iterable[str]] = None,
-    constraints: Optional[Iterable[str]] = None,
-    capabilities: Optional[Iterable[str]] = None,
-    brains: Optional[Iterable[str]] = None,
-    missing_information: Optional[Iterable[str]] = None,
-    contradictions: Optional[Iterable[str]] = None,
-    default_source: ContextSource = ContextSource.UNKNOWN,
-    fact_sources: Optional[Mapping[str, ContextSource]] = None,
-    signal_sources: Optional[Mapping[str, ContextSource]] = None,
-) -> HeroicContextState:
-    """
-    Add supplied contextual information to an existing state.
+        if user_request.strip():
+            context.set_user_request(user_request)
 
-    Nothing is inferred when a value is absent.
-    """
-    if facts:
-        for key, value in facts.items():
-            source = default_source
+        if user_context:
+            context.update_user_context(user_context)
 
-            if fact_sources and key in fact_sources:
-                source = fact_sources[key]
+        if system_context:
+            context.update_system_context(system_context)
 
-            context.add_fact(
-                key,
-                value,
-                source,
+        if environmental_context:
+            context.update_environmental_context(
+                environmental_context
             )
 
-    if signals:
-        for key, value in signals.items():
-            source = default_source
+        return context
 
-            if signal_sources and key in signal_sources:
-                source = signal_sources[key]
+    def add_fact(
+        self,
+        context: HeroicContextState,
+        fact: str,
+    ) -> HeroicContextState:
+        context.add_fact(fact)
+        return context
 
-            context.add_signal(
-                key,
-                value,
-                source,
-            )
+    def add_assumption(
+        self,
+        context: HeroicContextState,
+        assumption: str,
+    ) -> HeroicContextState:
+        context.add_assumption(assumption)
+        return context
 
-    if assumptions:
-        for assumption in assumptions:
-            context.add_assumption(assumption)
+    def add_uncertainty(
+        self,
+        context: HeroicContextState,
+        uncertainty: str,
+    ) -> HeroicContextState:
+        context.add_uncertainty(uncertainty)
+        return context
 
-    if constraints:
-        for constraint in constraints:
-            context.add_constraint(constraint)
-
-    if capabilities:
-        for capability_id in capabilities:
-            context.add_capability(capability_id)
-
-    if brains:
-        for brain_name in brains:
-            context.add_brain(brain_name)
-
-    if missing_information:
-        for information in missing_information:
-            context.add_missing_information(information)
-
-    if contradictions:
-        for contradiction in contradictions:
-            context.add_contradiction(contradiction)
-
-    return context
-
-def merge(
-    self,
-    target: HeroicContextState,
-    source: HeroicContextState,
-) -> HeroicContextState:
-    """
-    Merge one contextual state into another.
-
-    Existing target values are preserved unless the source contains
-    a value for the same fact or signal key.
-    """
-    for key, value in source.facts.items():
-        source_type = source.sources.get(
-            key,
-            ContextSource.UNKNOWN,
-        )
-
-        target.add_fact(
-            key,
-            value,
-            source_type,
-        )
-
-    for key, value in source.signals.items():
-        source_type = source.sources.get(
-            key,
-            ContextSource.UNKNOWN,
-        )
-
-        target.add_signal(
-            key,
-            value,
-            source_type,
-        )
-
-    for assumption in source.assumptions:
-        target.add_assumption(assumption)
-
-    for constraint in source.constraints:
-        target.add_constraint(constraint)
-
-    for capability_id in source.relevant_capabilities:
-        target.add_capability(capability_id)
-
-    for brain_name in source.relevant_brains:
-        target.add_brain(brain_name)
-
-    for information in source.missing_information:
-        target.add_missing_information(information)
-
-    for contradiction in source.contradictions:
-        target.add_contradiction(contradiction)
-
-    target.confidence = min(
-        target.confidence,
-        source.confidence,
-    )
-
-    return target
-
-def add_user_context(
-    self,
-    context: HeroicContextState,
-    values: Mapping[str, Any],
-) -> HeroicContextState:
-    """Add explicitly user-provided contextual values."""
-    return self.assemble(
-        context,
-        facts=values,
-        default_source=ContextSource.USER,
-    )
-
-def add_memory_context(
-    self,
-    context: HeroicContextState,
-    values: Mapping[str, Any],
-) -> HeroicContextState:
-    """Add context supplied by the memory system."""
-    return self.assemble(
-        context,
-        facts=values,
-        default_source=ContextSource.MEMORY,
-    )
-
-def add_knowledge_context(
-    self,
-    context: HeroicContextState,
-    values: Mapping[str, Any],
-) -> HeroicContextState:
-    """Add context supplied by the knowledge system."""
-    return self.assemble(
-        context,
-        facts=values,
-        default_source=ContextSource.KNOWLEDGE,
-    )
-
-def add_cognitive_state(
-    self,
-    context: HeroicContextState,
-    values: Mapping[str, Any],
-) -> HeroicContextState:
-    """Add context supplied by VALE cognitive state."""
-    return self.assemble(
-        context,
-        facts=values,
-        default_source=ContextSource.COGNITIVE_STATE,
-    )
-
-def mark_missing(
-    self,
-    context: HeroicContextState,
-    information: Iterable[str],
-) -> HeroicContextState:
-    """Explicitly mark information as missing."""
-    for item in information:
+    def add_missing_information(
+        self,
+        context: HeroicContextState,
+        item: str,
+    ) -> HeroicContextState:
         context.add_missing_information(item)
+        return context
 
-    return context
+    def is_sufficient(
+        self,
+        context: HeroicContextState,
+    ) -> bool:
+        return context.is_sufficient()
 
-def add_contradictions(
-    self,
-    context: HeroicContextState,
-    contradictions: Iterable[str],
-) -> HeroicContextState:
-    """Explicitly register contextual contradictions."""
-    for contradiction in contradictions:
-        context.add_contradiction(contradiction)
-
-    return context
+    def to_dict(
+        self,
+        context: HeroicContextState,
+    ) -> Dict[str, Any]:
+        return context.to_dict()
