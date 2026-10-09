@@ -1,29 +1,34 @@
 """
 HEROIC PLANNING PACKAGE
 
-The Planning layer transforms HEROIC's objectives and tasks into
-structured execution plans.
+Transforms HEROIC objectives and tasks into structured plans.
 
-Planning is responsible for determining:
+Planning determines:
     - what work needs to happen
-    - how work is structured
-    - task relationships
-    - execution readiness
-    - the logical execution plan
+    - how tasks are structured
+    - task dependencies
+    - plan readiness
+    - logical execution order
 
-Planning does NOT perform execution itself.
+Planning does NOT execute tasks or optimize runtime performance.
 
 ALPHA remains responsible for execution optimization,
-parallelism, resource allocation, and performance.
+resource allocation, and runtime performance.
 """
 
-from .plan_state import HeroicPlanState
+from .plan_state import (
+    HeroicPlanState,
+    PlanStatus,
+    PlanType,
+)
 from .task_planner import HeroicTaskPlanner
 from .dependency_planner import HeroicDependencyPlanner
 from .execution_plan import HeroicExecutionPlan
 
 __all__ = [
     "HeroicPlanState",
+    "PlanStatus",
+    "PlanType",
     "HeroicTaskPlanner",
     "HeroicDependencyPlanner",
     "HeroicExecutionPlan",
