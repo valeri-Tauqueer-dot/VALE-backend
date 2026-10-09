@@ -1,186 +1,172 @@
-"""
-HEROIC OBJECTIVE STATE
-
-Foundational representation of what a HEROIC mission is trying
-to accomplish.
-
-This module defines objective state only.
-
-It does not:
-- interpret user intent
-- select capabilities
-- activate brains
-- execute tasks
-- verify results
-- make final decisions
-"""
+from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 
 class ObjectiveStatus(str, Enum):
-    """
-    Lifecycle status of a HEROIC objective.
-    """
-
-    UNDEFINED = "undefined"
-    IDENTIFIED = "identified"
-    REFINED = "refined"
-    READY = "ready"
+    PENDING = "pending"
+    ACTIVE = "active"
     IN_PROGRESS = "in_progress"
-    BLOCKED = "blocked"
     COMPLETED = "completed"
+    BLOCKED = "blocked"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
 
 @dataclass
 class HeroicObjectiveState:
-    """
-    Structured state representing a HEROIC objective.
-    """
-
-    objective_id: str = ""
-
-    description: str = ""
-
-    status: ObjectiveStatus = ObjectiveStatus.UNDEFINED
-
+    objective_id: str
+    description: str
+    status: ObjectiveStatus = ObjectiveStatus.PENDING
+    goal_id: Optional[str] = None
+    priority: float = 0.5
     success_criteria: List[str] = field(default_factory=list)
-
-    constraints: List[str] = field(default_factory=list)
-
-    required_outcomes: List[str] = field(default_factory=list)
-
-    priorities: List[str] = field(default_factory=list)
-
-    assumptions: List[str] = field(default_factory=list)
-
-    unresolved_questions: List[str] = field(default_factory=list)
-
-    blockers: List[str] = field(default_factory=list)
-
-    parent_objective_id: Optional[str] = None
-
+    task_ids: List[str] = field(default_factory=list)
+    dependency_objective_ids: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    failure_reason: Optional[str] = None
 
-    def add_success_criterion(self, criterion: str) -> None:
-        """
-        Add a condition that must be satisfied for completion.
-        """
+    def __post_init__(self) -> None:
+        self.objective_id = str(self.objective_id).strip()
+        self.description = str(self.description).strip()
 
-        if criterion and criterion not in self.success_criteria:
-            self.success_criteria.append(criterion)
+        if not self.objective_id:
+            raise ValueError("objective_id cannot be empty.")
 
-    def add_constraint(self, constraint: str) -> None:
-        """
-        Add a constraint governing the objective.
-        """
+        if not self.description:
+            raise ValueError("description cannot be empty.")
 
-        if constraint and constraint not in self.constraints:
-            self.constraints.append(constraint)
+        self.priority = max(0.0, min(1.0, float(self.priority)))
 
-    def add_required_outcome(self, outcome: str) -> None:
-        """
-        Add an outcome required by the objective.
-        """
+        if isinstance(self.status, str):
+            self.status = ObjectiveStatus(self.status.lower())
 
-        if outcome and outcome not in self.required_outcomes:
-            self.required_outcomes.append(outcome)
+    def activate(self) -> None:
+        if self.status in {
+            ObjectiveStatus.COMPLETED,
+            ObjectiveStatus.CANCELLED,
+            ObjectiveStatus.FAILED,
+        }:
+            raise ValueError(
+                f"Cannot activate an objective with status "
+                f"'{self.status.value}'."
+            )
 
-    def add_priority(self, priority: str) -> None:
-        """
-        Add an objective priority.
-        """
+        self.status = ObjectiveStatus.ACTIVE
+        self.updated_at = datetime.now(timezone.utc)
 
-        if priority and priority not in self.priorities:
-            self.priorities.append(priority)
-
-    def add_assumption(self, assumption: str) -> None:
-        """
-        Record an assumption associated with the objective.
-        """
-
-        if assumption and assumption not in self.assumptions:
-            self.assumptions.append(assumption)
-
-    def add_unresolved_question(self, question: str) -> None:
-        """
-        Record a question that remains unresolved.
-        """
-
-        if question and question not in self.unresolved_questions:
-            self.unresolved_questions.append(question)
-
-    def add_blocker(self, blocker: str) -> None:
-        """
-        Record a condition preventing objective progress.
-        """
-
-        if blocker and blocker not in self.blockers:
-            self.blockers.append(blocker)
-
-        self.status = ObjectiveStatus.BLOCKED
-
-    def is_ready(self) -> bool:
-        """
-        Determine whether the objective has enough structure
-        to enter execution planning.
-        """
-
-        return (
-            bool(self.description)
-            and self.status in {
-                ObjectiveStatus.IDENTIFIED,
-                ObjectiveStatus.REFINED,
-                ObjectiveStatus.READY,
-            }
-            and not self.unresolved_questions
-            and not self.blockers
-        )
-
-    def mark_in_progress(self) -> None:
-        """
-        Mark the objective as actively being pursued.
-        """
+    def start(self) -> None:
+        if self.status in {
+            ObjectiveStatus.COMPLETED,
+            ObjectiveStatus.CANCELLED,
+            ObjectiveStatus.FAILED,
+        }:
+            raise ValueError(
+                f"Cannot start an objective with status "
+                f"'{self.status.value}'."
+            )
 
         self.status = ObjectiveStatus.IN_PROGRESS
+        self.updated_at = datetime.now(timezone.utc)
 
-    def mark_completed(self) -> None:
-        """
-        Mark the objective as completed.
-        """
+    def complete(self) -> None:
+        if self.status in {
+            ObjectiveStatus.CANCELLED,
+            ObjectiveStatus.FAILED,
+        }:
+            raise ValueError(
+                f"Cannot complete an objective with status "
+                f"'{self.status.value}'."
+            )
 
         self.status = ObjectiveStatus.COMPLETED
+        self.failure_reason = None
+        self.updated_at = datetime.now(timezone.utc)
 
-    def mark_failed(self, reason: Optional[str] = None) -> None:
-        """
-        Mark the objective as failed.
-        """
+    def block(self, reason: Optional[str] = None) -> None:
+        if self.status == ObjectiveStatus.COMPLETED:
+            raise ValueError("A completed objective cannot be blocked.")
 
-        if reason:
-            self.add_blocker(reason)
+        self.status = ObjectiveStatus.BLOCKED
+        self.failure_reason = reason
+        self.updated_at = datetime.now(timezone.utc)
+
+    def fail(self, reason: Optional[str] = None) -> None:
+        if self.status == ObjectiveStatus.COMPLETED:
+            raise ValueError("A completed objective cannot be marked failed.")
 
         self.status = ObjectiveStatus.FAILED
+        self.failure_reason = reason
+        self.updated_at = datetime.now(timezone.utc)
+
+    def cancel(self, reason: Optional[str] = None) -> None:
+        if self.status == ObjectiveStatus.COMPLETED:
+            raise ValueError("A completed objective cannot be cancelled.")
+
+        self.status = ObjectiveStatus.CANCELLED
+        self.failure_reason = reason
+        self.updated_at = datetime.now(timezone.utc)
+
+    def add_task(self, task_id: str) -> None:
+        task_id = str(task_id).strip()
+
+        if not task_id:
+            raise ValueError("task_id cannot be empty.")
+
+        if task_id not in self.task_ids:
+            self.task_ids.append(task_id)
+            self.updated_at = datetime.now(timezone.utc)
+
+    def add_dependency(self, objective_id: str) -> None:
+        objective_id = str(objective_id).strip()
+
+        if not objective_id:
+            raise ValueError("dependency objective_id cannot be empty.")
+
+        if objective_id == self.objective_id:
+            raise ValueError("An objective cannot depend on itself.")
+
+        if objective_id not in self.dependency_objective_ids:
+            self.dependency_objective_ids.append(objective_id)
+            self.updated_at = datetime.now(timezone.utc)
+
+    def is_terminal(self) -> bool:
+        return self.status in {
+            ObjectiveStatus.COMPLETED,
+            ObjectiveStatus.FAILED,
+            ObjectiveStatus.CANCELLED,
+        }
+
+    def is_actionable(self) -> bool:
+        return self.status in {
+            ObjectiveStatus.PENDING,
+            ObjectiveStatus.ACTIVE,
+            ObjectiveStatus.IN_PROGRESS,
+        }
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert objective state into a serializable dictionary.
-        """
-
         return {
             "objective_id": self.objective_id,
             "description": self.description,
             "status": self.status.value,
+            "goal_id": self.goal_id,
+            "priority": self.priority,
             "success_criteria": list(self.success_criteria),
-            "constraints": list(self.constraints),
-            "required_outcomes": list(self.required_outcomes),
-            "priorities": list(self.priorities),
-            "assumptions": list(self.assumptions),
-            "unresolved_questions": list(self.unresolved_questions),
-            "blockers": list(self.blockers),
-            "parent_objective_id": self.parent_objective_id,
+            "task_ids": list(self.task_ids),
+            "dependency_objective_ids": list(
+                self.dependency_objective_ids
+            ),
             "metadata": dict(self.metadata),
-      }
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "failure_reason": self.failure_reason,
+    }
