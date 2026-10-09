@@ -1,17 +1,8 @@
 """
 HEROIC DEPENDENCY PLANNER
 
-Resolves and validates task dependencies inside a HEROIC plan.
-
-Responsibilities:
-- Register task dependencies into the plan.
-- Validate that dependency references point to known tasks.
-- Detect circular dependencies.
-- Produce a dependency-safe topological ordering.
-- Identify dependency levels that may permit parallel execution.
-- Classify the resulting plan as sequential, parallel, or hybrid.
-
-This component does not execute tasks.
+Resolves and validates dependencies in a HEROIC plan.
+Does not execute tasks or authorize runtime parallel execution.
 """
 
 from __future__ import annotations
@@ -24,72 +15,76 @@ from HEROIC.planning.plan_state import HeroicPlanState, PlanType
 
 
 class HeroicDependencyPlanner:
-    """Resolve and validate a HEROIC plan's task dependency graph."""
+    """Resolve and validate a HEROIC plan's dependency graph."""
+
+    VERSION = "0.3.0"
 
     def __init__(self) -> None:
         self.planner_name = "HEROIC_DEPENDENCY_PLANNER"
-        self.version = "0.2.0"
+        self.version = self.VERSION
 
     def build_dependency_plan(
         self,
         plan: HeroicPlanState,
         tasks: Sequence[HeroicTaskState],
     ) -> HeroicPlanState:
-        """
-        Apply dependency analysis to an existing plan.
+        """Build dependency metadata and a valid topological order."""
 
-        Raises:
-            ValueError: If task IDs are duplicated, a dependency is
-                missing, a self-dependency exists, or a cycle is found.
-        """
+        if plan is None:
+            raise ValueError("plan must not be None.")
+
         task_list = list(tasks)
-        task_map = self._build_task_map(task_list)
 
+        if any(task is None for task in task_list):
+            raise ValueError("tasks must not contain None.")
+
+        task_map = self._build_task_map(task_list)
         self._validate_dependency_references(task_list, task_map)
 
-        # Ensure every task is registered before dependencies are added.
+        ordered_task_ids = self._topological_order(task_list, task_map)
+        parallel_groups = self._get_dependency_levels(
+            task_list,
+            task_map,
+        )
+
+        # Update derived state only after validation succeeds.
         for task in task_list:
             plan.add_task(task.task_id)
 
-        # Rebuild derived dependency state instead of retaining stale data.
         plan.dependency_map.clear()
         plan.parallel_task_groups.clear()
 
         self._register_dependencies(plan, task_list)
 
-        ordered_task_ids = self._topological_order(
-            task_list,
-            task_map,
-        )
         plan.ordered_task_ids = ordered_task_ids
 
-        self._build_parallel_groups(
-            plan,
-            task_list,
-            task_map,
-        )
-        self._classify_plan_type(plan)
+        for group in parallel_groups:
+            if len(group) > 1:
+                plan.add_parallel_group(group)
 
+        self._classify_plan_type(plan)
         return plan
 
     def validate(
         self,
         tasks: Sequence[HeroicTaskState],
     ) -> bool:
-        """Validate task dependency integrity without modifying a plan."""
-        task_list = list(tasks)
-        task_map = self._build_task_map(task_list)
+        """Validate task IDs, references, and cycles without modifying a plan."""
 
+        task_list = list(tasks)
+
+        if any(task is None for task in task_list):
+            raise ValueError("tasks must not contain None.")
+
+        task_map = self._build_task_map(task_list)
         self._validate_dependency_references(task_list, task_map)
         self._topological_order(task_list, task_map)
-
         return True
 
     def _build_task_map(
         self,
         tasks: Sequence[HeroicTaskState],
     ) -> Dict[str, HeroicTaskState]:
-        """Build a lookup table and reject ambiguous task IDs."""
         task_map: Dict[str, HeroicTaskState] = {}
 
         for task in tasks:
@@ -109,27 +104,11 @@ class HeroicDependencyPlanner:
 
         return task_map
 
-    def _register_dependencies(
-        self,
-        plan: HeroicPlanState,
-        tasks: Sequence[HeroicTaskState],
-    ) -> None:
-        """Copy task-level dependency declarations into the plan."""
-        for task in tasks:
-            plan.dependency_map.setdefault(task.task_id, [])
-
-            for dependency_id in task.dependency_task_ids:
-                plan.add_dependency(
-                    task.task_id,
-                    dependency_id,
-                )
-
     def _validate_dependency_references(
         self,
         tasks: Sequence[HeroicTaskState],
         task_map: Dict[str, HeroicTaskState],
     ) -> None:
-        """Ensure every dependency refers to a valid, distinct task."""
         for task in tasks:
             for dependency_id in task.dependency_task_ids:
                 if dependency_id not in task_map:
@@ -143,24 +122,30 @@ class HeroicDependencyPlanner:
                         f"Task '{task.task_id}' cannot depend on itself."
                     )
 
+    def _register_dependencies(
+        self,
+        plan: HeroicPlanState,
+        tasks: Sequence[HeroicTaskState],
+    ) -> None:
+        for task in tasks:
+            plan.dependency_map.setdefault(task.task_id, [])
+
+            for dependency_id in dict.fromkeys(task.dependency_task_ids):
+                plan.add_dependency(task.task_id, dependency_id)
+
     def _topological_order(
         self,
         tasks: Sequence[HeroicTaskState],
         task_map: Dict[str, HeroicTaskState],
     ) -> List[str]:
-        """
-        Produce a dependency-safe ordering using Kahn's algorithm.
+        """Order every dependency before the task that requires it."""
 
-        If task A depends on task B, B must appear before A.
-        """
         dependents: Dict[str, Set[str]] = defaultdict(set)
         indegree: Dict[str, int] = {
             task_id: 0 for task_id in task_map
         }
 
         for task in tasks:
-            # Convert to a set so duplicate dependency declarations
-            # cannot inflate the indegree count.
             for dependency_id in set(task.dependency_task_ids):
                 dependents[dependency_id].add(task.task_id)
                 indegree[task.task_id] += 1
@@ -191,7 +176,6 @@ class HeroicDependencyPlanner:
                 for task_id, degree in indegree.items()
                 if degree > 0
             )
-
             raise ValueError(
                 "Circular task dependency detected involving: "
                 + ", ".join(cycle_nodes)
@@ -199,31 +183,25 @@ class HeroicDependencyPlanner:
 
         return ordered
 
-    def _build_parallel_groups(
+    def _get_dependency_levels(
         self,
-        plan: HeroicPlanState,
         tasks: Sequence[HeroicTaskState],
         task_map: Dict[str, HeroicTaskState],
-    ) -> None:
-        """
-        Group tasks into dependency levels.
+    ) -> List[List[str]]:
+        """Return structural dependency levels, not execution permissions."""
 
-        Each level contains tasks whose dependencies are all satisfied
-        by earlier levels. This identifies structural parallelism only;
-        ALPHA must still decide whether concurrent execution is safe.
-        """
-        remaining_dependencies: Dict[str, Set[str]] = {
+        remaining: Dict[str, Set[str]] = {
             task.task_id: set(task.dependency_task_ids)
             for task in tasks
         }
 
         completed: Set[str] = set()
+        levels: List[List[str]] = []
 
         while len(completed) < len(task_map):
             ready = sorted(
                 task_id
-                for task_id, dependencies
-                in remaining_dependencies.items()
+                for task_id, dependencies in remaining.items()
                 if task_id not in completed
                 and dependencies.issubset(completed)
             )
@@ -234,37 +212,28 @@ class HeroicDependencyPlanner:
                     for task_id in task_map
                     if task_id not in completed
                 )
-
                 raise ValueError(
                     "Unable to resolve dependency levels for: "
                     + ", ".join(unresolved)
                 )
 
-            if len(ready) > 1:
-                plan.add_parallel_group(ready)
-
+            levels.append(ready)
             completed.update(ready)
 
-    def _classify_plan_type(
-        self,
-        plan: HeroicPlanState,
-    ) -> None:
-        """Classify the plan based on its dependency structure."""
+        return levels
+
+    def _classify_plan_type(self, plan: HeroicPlanState) -> None:
         task_count = len(plan.task_ids)
 
         if task_count <= 1:
             plan.plan_type = PlanType.SINGLE_TASK
             return
 
-        groups = [
-            group
-            for group in plan.parallel_task_groups
-            if group
-        ]
-
         has_parallel_stage = any(
-            len(group) > 1 for group in groups
+            len(group) > 1
+            for group in plan.parallel_task_groups
         )
+
         has_dependency_edges = any(
             bool(dependencies)
             for dependencies in plan.dependency_map.values()
@@ -276,3 +245,6 @@ class HeroicDependencyPlanner:
             plan.plan_type = PlanType.PARALLEL
         else:
             plan.plan_type = PlanType.SEQUENTIAL
+
+
+__all__ = ["HeroicDependencyPlanner"]
