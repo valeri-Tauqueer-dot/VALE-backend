@@ -1,44 +1,41 @@
+
 """
-VALE search engine - storage manager (step 1).
+VALE AI — Search Storage Manager
+=================================
 
-One small place that saves and finds documents (news pieces, later more).
-The rest of VALE only says "save this" or "find that".
+Supports:
+1. Dashboard-managed PostgreSQL shelves from storage_registry.py
+2. Legacy SEARCH_DB_URL_1 through SEARCH_DB_URL_9 environment variables
+3. Local SQLite fallback only when no database is configured
 
-How it picks a database:
-  - It reads these Render / GitHub secrets (set only the ones you have):
-        SEARCH_DB_URL_1   first database  (your Supabase)
-        SEARCH_DB_URL_2   second database (later, for example Neon)
-        SEARCH_DB_URL_3   third database  (later)
-  - It writes to the first database that still has room.
-  - If no secret is set, it uses a local file "search_data.db" (good for testing).
-  - SEARCH_DB_MAX_MB is the size where a database counts as "full".
-    Default 400 (safe for a free 500 MB plan).
-
-We keep only the title, a short text and the link. Never full articles.
+Stores only URLs, titles, short excerpts, and source metadata.
+Never intentionally stores full articles.
 """
+
 from __future__ import annotations
 
 import hashlib
 import os
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, make_url
+
 
 MAX_TEXT_CHARS = 600
 MAX_TITLE_CHARS = 300
 
 _CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS search_documents (
-    url_hash     TEXT PRIMARY KEY,
-    url          TEXT NOT NULL,
-    title        TEXT,
-    body         TEXT,
-    source       TEXT,
-    market       TEXT,
+    url_hash TEXT PRIMARY KEY,
+    url TEXT NOT NULL,
+    title TEXT,
+    body TEXT,
+    source TEXT,
+    market TEXT,
     published_at TEXT,
-    fetched_at   TEXT
+    fetched_at TEXT
 )
 """
 
@@ -51,129 +48,332 @@ ON CONFLICT (url_hash) DO NOTHING
 """
 
 _engines: Optional[List[Engine]] = None
-_engine_limits: Dict[str, tuple[float, float]] = {}
+
+# Maps engine identity to (allocated maximum MB, routing threshold %).
+_engine_limits: Dict[int, tuple[float, float]] = {}
+
+
+def _env_float(name: str, default: float) -> float:
+    """Read a positive numeric environment setting safely."""
+    try:
+        value = float(os.getenv(name, str(default)))
+        return value if value > 0 else default
+    except (TypeError, ValueError):
+        return default
 
 
 def _fix_url(url: str) -> str:
-    """Use the psycopg2 driver for Postgres links (same as database.py)."""
-    url = url.strip()
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg2://" + url[len("postgresql://"):]
+    """Normalize PostgreSQL URLs for psycopg2."""
+    url = (url or "").strip()
+
     if url.startswith("postgres://"):
         return "postgresql+psycopg2://" + url[len("postgres://"):]
+
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg2://" + url[len("postgresql://"):]
+
     return url
 
 
+def _database_identity(url: str) -> tuple:
+    """Identify duplicate database configurations without logging credentials."""
+    try:
+        parsed = make_url(_fix_url(url))
+
+        if parsed.get_backend_name() == "sqlite":
+            return ("sqlite", parsed.database or "")
+
+        return (
+            parsed.get_backend_name(),
+            (parsed.host or "").lower(),
+            parsed.port,
+            (parsed.database or "").strip("/"),
+        )
+    except Exception:
+        return (
+            "unknown",
+            hashlib.sha256(url.encode("utf-8")).hexdigest(),
+        )
+
+
 def _get_engines() -> List[Engine]:
-    global _engines
+    """Load configured shelves once and initialize their search tables."""
+    global _engines, _engine_limits
+
     if _engines is not None:
         return _engines
 
-    def env_float(name: str, default: float) -> float:
-        try:
-            return float((os.getenv(name) or str(default)).strip())
-        except (TypeError, ValueError):
-            return default
+    dashboard_sources = []
+    environment_sources = []
 
-    sources = []
-    for i in range(1, 10):
-        value = (os.getenv(f"SEARCH_DB_URL_{i}") or "").strip()
-        if value:
-            sources.append((value, env_float("SEARCH_DB_MAX_MB", 400.0), env_float("SEARCH_DB_THRESHOLD_PERCENT", 80.0)))
-
-    # Dashboard-managed shelves are loaded dynamically; credentials are decrypted only server-side.
+    # Dashboard-managed shelves are the primary configuration.
     try:
         from search_engine.storage_registry import runtime_shelves
-        for shelf in runtime_shelves():
-            sources.append((shelf["url"], float(shelf["max_storage_mb"]), float(shelf["threshold_percent"])))
+
+        shelves = runtime_shelves()
+
+        for shelf in shelves:
+            url = (shelf.get("url") or "").strip()
+
+            if not url:
+                continue
+
+            try:
+                maximum = float(shelf.get("max_storage_mb", 400))
+                threshold = float(shelf.get("threshold_percent", 80))
+                priority = int(shelf.get("priority", 100))
+
+                if maximum <= 0 or not 1 <= threshold <= 100:
+                    print(
+                        "STORAGE: skipping shelf with invalid limits",
+                        flush=True,
+                    )
+                    continue
+
+                dashboard_sources.append(
+                    (url, maximum, threshold, priority)
+                )
+
+            except (TypeError, ValueError):
+                print(
+                    "STORAGE: skipping shelf with invalid configuration",
+                    flush=True,
+                )
+
     except Exception as error:
-        print("STORAGE: dynamic shelf registry unavailable:", type(error).__name__, flush=True)
+        print(
+            "STORAGE: dashboard registry unavailable:",
+            type(error).__name__,
+            flush=True,
+        )
 
+    # Backward-compatible environment-variable configuration.
+    for number in range(1, 10):
+        url = (os.getenv(f"SEARCH_DB_URL_{number}") or "").strip()
+
+        if url:
+            environment_sources.append(
+                (
+                    url,
+                    _env_float("SEARCH_DB_MAX_MB", 400),
+                    _env_float("SEARCH_DB_THRESHOLD_PERCENT", 80),
+                    number,
+                )
+            )
+
+    # Lower dashboard priority numbers are attempted first.
+    sources = sorted(dashboard_sources, key=lambda item: item[3])
+
+    # Dashboard shelves take precedence over legacy environment shelves.
+    sources.extend(environment_sources)
+
+    # Local SQLite is for development only when no database is configured.
     if not sources:
-        print("STORAGE: no search database configured, using local file search_data.db", flush=True)
-        sources = [("sqlite:///./search_data.db", 400.0, 80.0)]
+        print(
+            "STORAGE: no database configured; using local search_data.db",
+            flush=True,
+        )
+        sources = [
+            ("sqlite:///./search_data.db", 400, 80, 999999)
+        ]
 
-    engines = []
-    limits = {}
-    for url, maximum_mb, threshold_percent in sources:
+    engines: List[Engine] = []
+    limits: Dict[int, tuple[float, float]] = {}
+    seen = set()
+
+    for url, maximum, threshold, _priority in sources:
+        identity = _database_identity(url)
+
+        if identity in seen:
+            print(
+                "STORAGE: duplicate database configuration skipped",
+                flush=True,
+            )
+            continue
+
+        seen.add(identity)
         engine = None
+
         try:
-            fixed = _fix_url(url)
-            args = {"check_same_thread": False} if fixed.startswith("sqlite") else {}
-            engine = create_engine(fixed, pool_pre_ping=True, pool_recycle=300, connect_args=args)
-            with engine.begin() as conn:
-                conn.execute(text(_CREATE_TABLE))
+            fixed_url = _fix_url(url)
+
+            connect_args: Dict[str, Any] = {}
+
+            if fixed_url.startswith("sqlite"):
+                connect_args["check_same_thread"] = False
+            else:
+                connect_args["connect_timeout"] = 8
+
+            engine = create_engine(
+                fixed_url,
+                pool_pre_ping=True,
+                pool_recycle=300,
+                connect_args=connect_args,
+            )
+
+            with engine.begin() as connection:
+                connection.execute(text(_CREATE_TABLE))
+
             engines.append(engine)
-            limits[str(engine.url)] = (maximum_mb, threshold_percent)
+            limits[id(engine)] = (maximum, threshold)
+
         except Exception as error:
             if engine is not None:
                 engine.dispose()
-            # A failed shelf must not prevent healthy shelves from being used.
-            print("STORAGE: skipping unavailable shelf:", type(error).__name__, flush=True)
 
-    global _engine_limits
+            # Never print connection URLs or database passwords.
+            print(
+                "STORAGE: shelf initialization failed:",
+                type(error).__name__,
+                flush=True,
+            )
+
     _engine_limits = limits
     _engines = engines
-    print(f"STORAGE: {len(engines)} database(s) ready", flush=True)
+
+    print(
+        f"STORAGE: {len(engines)} database shelf(s) ready",
+        flush=True,
+    )
+
     return engines
 
 
 def reset_for_tests() -> None:
+    """Dispose cached connections and reload configuration next time."""
     global _engines, _engine_limits
+
+    if _engines:
+        for engine in _engines:
+            try:
+                engine.dispose()
+            except Exception:
+                pass
+
     _engines = None
     _engine_limits = {}
 
 
 def url_hash(url: str) -> str:
-    return hashlib.sha256(url.strip().encode("utf-8")).hexdigest()
+    """Create a stable identifier for a URL."""
+    return hashlib.sha256(
+        (url or "").strip().encode("utf-8")
+    ).hexdigest()
 
 
 def _size_mb(engine: Engine) -> float:
-    """Size of the database in MB."""
-    name = engine.dialect.name
+    """
+    Read database size in MiB.
+    If size cannot be checked, treat the shelf as full for safety.
+    """
     try:
-        with engine.connect() as conn:
-            if name == "postgresql":
-                size = conn.execute(text("SELECT pg_database_size(current_database())")).scalar()
+        with engine.connect() as connection:
+
+            if engine.dialect.name == "postgresql":
+                size = connection.execute(
+                    text("SELECT pg_database_size(current_database())")
+                ).scalar()
+
                 return float(size or 0) / (1024 * 1024)
-            if name == "sqlite":
-                page_count = conn.execute(text("PRAGMA page_count")).scalar() or 0
-                page_size = conn.execute(text("PRAGMA page_size")).scalar() or 0
-                return float(page_count * page_size) / (1024 * 1024)
+
+            if engine.dialect.name == "sqlite":
+                pages = connection.execute(
+                    text("PRAGMA page_count")
+                ).scalar() or 0
+
+                page_size = connection.execute(
+                    text("PRAGMA page_size")
+                ).scalar() or 0
+
+                return float(pages * page_size) / (1024 * 1024)
+
     except Exception as error:
-        print("STORAGE: could not read size:", type(error).__name__, flush=True)
-        # Treat an unmeasurable shelf as unavailable; never keep writing to it blindly.
-        return float("inf")
+        print(
+            "STORAGE: size check failed:",
+            type(error).__name__,
+            flush=True,
+        )
+
     return float("inf")
 
 
-def _max_mb() -> float:
-    """Legacy fallback limit, in MB."""
-    try:
-        return float(os.getenv("SEARCH_DB_MAX_MB", "400"))
-    except ValueError:
-        return 400.0
-
-
 def _routing_limit_mb(engine: Engine) -> float:
-    """Use each shelf's configured plan allocation and its threshold percentage."""
+    """Return the maximum permitted size before routing skips this shelf."""
     if not _engine_limits:
         _get_engines()
-    maximum, threshold = _engine_limits.get(str(engine.url), (_max_mb(), env_float("SEARCH_DB_THRESHOLD_PERCENT", 80.0)))
+
+    maximum, threshold = _engine_limits.get(
+        id(engine),
+        (
+            _env_float("SEARCH_DB_MAX_MB", 400),
+            _env_float("SEARCH_DB_THRESHOLD_PERCENT", 80),
+        ),
+    )
+
     return maximum * threshold / 100.0
 
 
+def _has_room(engine: Engine) -> bool:
+    """Check whether the shelf is below its configured threshold."""
+    return _size_mb(engine) < _routing_limit_mb(engine)
+
+
 def exists(url: str) -> bool:
-    """True if this link is already saved in any database."""
-    h = url_hash(url)
+    """Check whether a URL already exists on any reachable shelf."""
+    url = (url or "").strip()
+
+    if not url:
+        return False
+
+    digest = url_hash(url)
+
     for engine in _get_engines():
-        with engine.connect() as conn:
-            row = conn.execute(
-                text("SELECT 1 FROM search_documents WHERE url_hash = :h"), {"h": h}
-            ).first()
-        if row:
-            return True
+        try:
+            with engine.connect() as connection:
+                row = connection.execute(
+                    text(
+                        "SELECT 1 FROM search_documents "
+                        "WHERE url_hash = :digest"
+                    ),
+                    {"digest": digest},
+                ).first()
+
+            if row:
+                return True
+
+        except Exception as error:
+            print(
+                "STORAGE: duplicate check failed:",
+                type(error).__name__,
+                flush=True,
+            )
+
     return False
+
+
+def _make_record(
+    url: str,
+    title: str = "",
+    body: str = "",
+    source: str = "",
+    market: str = "",
+    published_at: str = "",
+) -> Dict[str, str]:
+    """Build a size-limited search record."""
+    clean_url = (url or "").strip()
+
+    return {
+        "url_hash": url_hash(clean_url),
+        "url": clean_url,
+        "title": (title or "").strip()[:MAX_TITLE_CHARS],
+        "body": (body or "").strip()[:MAX_TEXT_CHARS],
+        "source": (source or "").strip()[:200],
+        "market": (market or "").strip()[:100],
+        "published_at": (published_at or "").strip()[:100],
+        "fetched_at": datetime.now(timezone.utc).isoformat(
+            timespec="seconds"
+        ),
+    }
 
 
 def save_document(
@@ -185,130 +385,274 @@ def save_document(
     published_at: str = "",
 ) -> bool:
     """
-    Save one document. Returns True if it was saved, False if it was
-    already there (or every database is full).
+    Save one URL and its short excerpt.
+
+    Returns True if inserted, False if already present or not saved.
+    Tries the next eligible shelf if a write fails.
     """
     url = (url or "").strip()
+
     if not url:
         return False
+
     if exists(url):
         return False
 
-    record: Dict[str, str] = {
-        "url_hash": url_hash(url),
-        "url": url,
-        "title": (title or "").strip()[:MAX_TITLE_CHARS],
-        "body": (body or "").strip()[:MAX_TEXT_CHARS],
-        "source": (source or "").strip(),
-        "market": (market or "").strip(),
-        "published_at": (published_at or "").strip(),
-        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
+    record = _make_record(
+        url, title, body, source, market, published_at
+    )
 
     for engine in _get_engines():
-        if _size_mb(engine) >= _routing_limit_mb(engine):
-            continue  # this one is full, try the next
-        with engine.begin() as conn:
-            conn.execute(text(_INSERT), record)
-        return True
+        try:
+            if not _has_room(engine):
+                continue
 
-    print("STORAGE: all databases are full. Add another SEARCH_DB_URL_n.", flush=True)
+            with engine.begin() as connection:
+                result = connection.execute(
+                    text(_INSERT), record
+                )
+
+            if result.rowcount == 1:
+                return True
+
+            # The URL may have been inserted by another request.
+            if result.rowcount == 0:
+                return False
+
+            # A successful write with an unknown rowcount should not be
+            # retried on another shelf, which could create a duplicate.
+            if result.rowcount is None or result.rowcount < 0:
+                return True
+
+        except Exception as error:
+            print(
+                "STORAGE: write failed; trying next shelf:",
+                type(error).__name__,
+                flush=True,
+            )
+
+    print(
+        "STORAGE: no eligible shelf accepted the document",
+        flush=True,
+    )
+
     return False
 
 
 def save_many(docs: List[Dict[str, str]]) -> int:
     """
-    Save many documents with very few database calls (fast).
-    Each doc is a dictionary with: url, title, body, source, market, published_at.
-    Returns how many new documents were saved.
+    Save a list of search documents.
+
+    Each item can contain url, title, body, source, market and published_at.
+    Returns the database driver's reported number of inserted rows.
     """
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     records: Dict[str, Dict[str, str]] = {}
-    for doc in docs:
+
+    for doc in docs or []:
+        if not isinstance(doc, dict):
+            continue
+
         url = (doc.get("url") or "").strip()
+
         if not url:
             continue
-        h = url_hash(url)
-        if h in records:
-            continue
-        records[h] = {
-            "url_hash": h,
-            "url": url,
-            "title": (doc.get("title") or "").strip()[:MAX_TITLE_CHARS],
-            "body": (doc.get("body") or "").strip()[:MAX_TEXT_CHARS],
-            "source": (doc.get("source") or "").strip(),
-            "market": (doc.get("market") or "").strip(),
-            "published_at": (doc.get("published_at") or "").strip(),
-            "fetched_at": now,
-        }
+
+        digest = url_hash(url)
+
+        if digest not in records:
+            records[digest] = _make_record(
+                url=url,
+                title=doc.get("title", ""),
+                body=doc.get("body", ""),
+                source=doc.get("source", ""),
+                market=doc.get("market", ""),
+                published_at=doc.get("published_at", ""),
+            )
+
     if not records:
         return 0
 
     engines = _get_engines()
 
-    # 1) Remove the ones that are already saved (one question per database).
+    # Remove records already stored on reachable shelves.
     for engine in engines:
         hashes = list(records)
-        with engine.connect() as conn:
-            for i in range(0, len(hashes), 200):
-                chunk = hashes[i:i + 200]
-                params = {f"h{j}": value for j, value in enumerate(chunk)}
-                marks = ",".join(f":h{j}" for j in range(len(chunk)))
-                sql = f"SELECT url_hash FROM search_documents WHERE url_hash IN ({marks})"
-                for row in conn.execute(text(sql), params).fetchall():
-                    records.pop(row[0], None)
+
+        try:
+            with engine.connect() as connection:
+                for start in range(0, len(hashes), 200):
+                    chunk = hashes[start:start + 200]
+
+                    params = {
+                        f"h{i}": digest
+                        for i, digest in enumerate(chunk)
+                    }
+
+                    placeholders = ",".join(
+                        f":h{i}" for i in range(len(chunk))
+                    )
+
+                    sql = (
+                        "SELECT url_hash FROM search_documents "
+                        f"WHERE url_hash IN ({placeholders})"
+                    )
+
+                    rows = connection.execute(
+                        text(sql), params
+                    ).fetchall()
+
+                    for row in rows:
+                        records.pop(row[0], None)
+
+        except Exception as error:
+            print(
+                "STORAGE: batch duplicate check failed:",
+                type(error).__name__,
+                flush=True,
+            )
+
     if not records:
         return 0
 
-    # 2) Save the new ones in the first database that still has room.
-    for engine in engines:
-        if _size_mb(engine) >= _routing_limit_mb(engine):
-            continue
-        with engine.begin() as conn:
-            conn.execute(text(_INSERT), list(records.values()))
-        return len(records)
+    batch = list(records.values())
 
-    print("STORAGE: all databases are full. Add another SEARCH_DB_URL_n.", flush=True)
+    for engine in engines:
+        try:
+            if not _has_room(engine):
+                continue
+
+            with engine.begin() as connection:
+                result = connection.execute(
+                    text(_INSERT), batch
+                )
+
+            if isinstance(result.rowcount, int):
+                if result.rowcount >= 0:
+                    return min(result.rowcount, len(batch))
+
+            return len(batch)
+
+        except Exception as error:
+            print(
+                "STORAGE: batch write failed; trying next shelf:",
+                type(error).__name__,
+                flush=True,
+            )
+
+    print(
+        "STORAGE: no eligible shelf accepted the batch",
+        flush=True,
+    )
+
     return 0
 
 
-def search(query: str, limit: int = 10) -> List[Dict[str, str]]:
-    """
-    Simple word search over every database.
-    A document scores 1 point for each query word found in title or body.
-    Newer documents win ties.
-    """
-    words = [w for w in (query or "").lower().split() if len(w) > 1][:8]
+def search(
+    query: str,
+    limit: int = 10,
+) -> List[Dict[str, str]]:
+    """Search titles and excerpts across all reachable shelves."""
+    words = [
+        word
+        for word in (query or "").lower().split()
+        if len(word) > 1
+    ][:8]
+
     if not words:
         return []
 
-    found: List[Dict[str, str]] = []
+    try:
+        limit = max(1, min(int(limit), 100))
+    except (TypeError, ValueError):
+        limit = 10
+
+    results: List[Dict[str, Any]] = []
+
     for engine in _get_engines():
         clauses = []
         params: Dict[str, str] = {}
-        for i, word in enumerate(words):
-            clauses.append(f"(lower(coalesce(title,'')) LIKE :w{i} OR lower(coalesce(body,'')) LIKE :w{i})")
-            params[f"w{i}"] = f"%{word}%"
+
+        for index, word in enumerate(words):
+            clauses.append(
+                f"(lower(coalesce(title,'')) LIKE :w{index} "
+                f"OR lower(coalesce(body,'')) LIKE :w{index})"
+            )
+
+            params[f"w{index}"] = f"%{word}%"
+
         sql = (
-            "SELECT url, title, body, source, market, published_at, fetched_at "
-            "FROM search_documents WHERE " + " OR ".join(clauses) +
-            " ORDER BY fetched_at DESC LIMIT 200"
+            "SELECT url, title, body, source, market, "
+            "published_at, fetched_at "
+            "FROM search_documents WHERE "
+            + " OR ".join(clauses)
+            + " ORDER BY fetched_at DESC LIMIT 200"
         )
-        with engine.connect() as conn:
-            rows = conn.execute(text(sql), params).mappings().all()
-        found.extend(dict(r) for r in rows)
 
-    def score(doc: Dict[str, str]) -> int:
-        haystack = ((doc.get("title") or "") + " " + (doc.get("body") or "")).lower()
-        return sum(1 for w in words if w in haystack)
+        try:
+            with engine.connect() as connection:
+                rows = connection.execute(
+                    text(sql), params
+                ).mappings().all()
 
-    found.sort(key=lambda d: (score(d), d.get("fetched_at") or ""), reverse=True)
-    return found[:limit]
+            results.extend(dict(row) for row in rows)
+
+        except Exception as error:
+            print(
+                "STORAGE: search failed on a shelf:",
+                type(error).__name__,
+                flush=True,
+            )
+
+    # Deduplicate results if the same URL is present on multiple shelves.
+    unique: Dict[str, Dict[str, Any]] = {}
+
+    for doc in results:
+        url = str(doc.get("url") or "")
+
+        if url:
+            unique[url_hash(url)] = doc
+
+    def score(doc: Dict[str, Any]) -> int:
+        content = (
+            (doc.get("title") or "")
+            + " "
+            + (doc.get("body") or "")
+        ).lower()
+
+        return sum(1 for word in words if word in content)
+
+    output = list(unique.values())
+
+    output.sort(
+        key=lambda doc: (
+            score(doc),
+            str(doc.get("fetched_at") or ""),
+        ),
+        reverse=True,
+    )
+
+    return output[:limit]
 
 
 def count() -> int:
+    """Return the total number of search records across reachable shelves."""
     total = 0
+
     for engine in _get_engines():
-        with engine.connect() as conn:
-            total += int(conn.execute(text("SELECT count(*) FROM search_documents")).scalar() or 0)
+        try:
+            with engine.connect() as connection:
+                value = connection.execute(
+                    text("SELECT count(*) FROM search_documents")
+                ).scalar()
+
+            total += int(value or 0)
+
+        except Exception as error:
+            print(
+                "STORAGE: count failed on a shelf:",
+                type(error).__name__,
+                flush=True,
+            )
+
     return total
+      
