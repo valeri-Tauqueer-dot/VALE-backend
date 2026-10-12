@@ -298,24 +298,28 @@ def _size_mb(engine: Engine) -> float:
 
 
 
+
 def _routing_limit_mb(engine: Engine) -> float:
-    """Use each shelf's configured allocation and threshold."""
+    """Return the maximum permitted size before routing skips this shelf."""
     if not _engine_limits:
         _get_engines()
 
     try:
-        default_threshold = float(
-            os.getenv("SEARCH_DB_THRESHOLD_PERCENT", "80")
+        default_maximum = _env_float("SEARCH_DB_MAX_MB", 400)
+        default_threshold = _env_float(
+            "SEARCH_DB_THRESHOLD_PERCENT", 80
         )
     except (TypeError, ValueError):
+        default_maximum = 400.0
         default_threshold = 80.0
 
     maximum, threshold = _engine_limits.get(
-        str(engine.url),
-        (_max_mb(), default_threshold),
+        id(engine),
+        (default_maximum, default_threshold),
     )
 
     return maximum * threshold / 100.0
+    
     
 
 def _has_room(engine: Engine) -> bool:
