@@ -14,15 +14,14 @@ pytesseract>=0.3.10
 pypdf>=4.0.0
 python-docx>=1.1.0
 numpy
+cryptography>=42.0.0
 
-# Render is CPU-only. Use the CPU PyTorch wheel instead of the default
-# CUDA-enabled distribution, which unnecessarily installs hundreds of MB
-# of NVIDIA runtime packages on the web service.
+# Render is CPU-only. Use the CPU PyTorch wheel.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.14.1+cpu
 
 # Optional: enable only if server-side voice transcription is required.
 # faster-whisper>=1.0.0
 
-# Optional remote Turso/libSQL shelf support in Storage Command Center.
-sqlalchemy-libsql>=0.1.0
+# Turso/libSQL support. Pin the dialect version for predictable resolution.
+sqlalchemy-libsql==0.2.0
