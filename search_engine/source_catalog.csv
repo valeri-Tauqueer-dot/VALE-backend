@@ -1,0 +1,14 @@
+id,name,kind,url,params,parser,tags,note,enabled,verified
+gdelt-doc-search,GDELT news,api,https://api.gdeltproject.org/api/v2/doc/doc?query={query}&mode=artlist&maxrecords=20&format=json,query,gdelt_doc,news;world;mood;crisis,Live world news search across many countries,true,true
+wikipedia-search,Wikipedia,api,https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch={query},query,wikipedia_search,general;history;knowledge,General encyclopedia search,true,true
+wikidata-search,Wikidata,api,https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&language=en&search={query},query,wikidata_search,general;knowledge,Structured facts search,true,true
+hn-algolia,Hacker News,api,https://hn.algolia.com/api/v1/search?query={query},query,hn_algolia,tech;startups;mood,Tech community discussion search,true,true
+federal-register,US Federal Register,api,https://www.federalregister.gov/api/v1/documents.json?conditions%5Bterm%5D={query},query,federal_register,government;regulation;us,US government rules and notices search,true,true
+openalex-works,OpenAlex research,api,https://api.openalex.org/works?search={query},query,openalex,research;knowledge,Academic research paper search,true,true
+crossref-works,Crossref research,api,https://api.crossref.org/works?query={query},query,crossref,research;knowledge,Academic research paper search by DOI,true,true
+openlibrary-search,Open Library,api,https://openlibrary.org/search.json?q={query},query,openlibrary,books;knowledge,Book search,true,true
+gutendex-books,Project Gutenberg,api,https://gutendex.com/books/?search={query},query,gutendex,books;history,Free public-domain book search,true,true
+feed-hn-frontpage,Hacker News front page,rss,https://hnrss.org/frontpage,,atom_entries,tech;mood,Hacker News front page - newest tech stories,true,true
+feed-fed-press,Federal Reserve press releases,rss,https://www.federalreserve.gov/feeds/press_all.xml,,atom_entries,central_bank;us;finance,US Federal Reserve press releases,true,true
+feed-sec-press,SEC press releases,rss,https://www.sec.gov/news/pressreleases.rss,,atom_entries,regulation;us;finance,US SEC press releases,true,true
+feed-imf-news,IMF news,rss,https://www.imf.org/en/News/rss?language=eng,,atom_entries,economy;world;finance,IMF world economy news,true,false
