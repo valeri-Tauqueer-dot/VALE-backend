@@ -1,0 +1,49 @@
+name: VALE wave runner
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  wave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install what the wave runner needs
+        run: pip install sqlalchemy psycopg2-binary requests cryptography python-dotenv sqlalchemy-libsql==0.2.0
+
+      - name: Check this shard's sources
+        run: python -m search_engine.wave_runner
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_COUNT: 10
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SEARCH_DB_URL_1: ${{ secrets.SEARCH_DB_URL_1 }}
+          SEARCH_DB_URL_2: ${{ secrets.SEARCH_DB_URL_2 }}
+          SEARCH_DB_URL_3: ${{ secrets.SEARCH_DB_URL_3 }}
+          SEARCH_DB_URL_4: ${{ secrets.SEARCH_DB_URL_4 }}
+          SEARCH_DB_URL_5: ${{ secrets.SEARCH_DB_URL_5 }}
+          SEARCH_DB_URL_6: ${{ secrets.SEARCH_DB_URL_6 }}
+          SEARCH_DB_URL_7: ${{ secrets.SEARCH_DB_URL_7 }}
+          SEARCH_DB_URL_8: ${{ secrets.SEARCH_DB_URL_8 }}
+          SEARCH_DB_URL_9: ${{ secrets.SEARCH_DB_URL_9 }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          SEARCH_DB_TOKEN_1: ${{ secrets.SEARCH_DB_TOKEN_1 }}
+          SEARCH_DB_TOKEN_2: ${{ secrets.SEARCH_DB_TOKEN_2 }}
+          SEARCH_DB_TOKEN_3: ${{ secrets.SEARCH_DB_TOKEN_3 }}
+          SEARCH_DB_TOKEN_4: ${{ secrets.SEARCH_DB_TOKEN_4 }}
+          SEARCH_DB_TOKEN_5: ${{ secrets.SEARCH_DB_TOKEN_5 }}
