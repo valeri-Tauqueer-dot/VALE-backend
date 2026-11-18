@@ -1,0 +1,122 @@
+"""HEROIC enumerations. String enums, so they serialise straight to JSON."""
+from __future__ import annotations
+
+from enum import Enum
+
+
+class _S(str, Enum):
+    def __str__(self) -> str:
+        return self.value
+
+
+class MissionState(_S):
+    NEW = "NEW"
+    UNDERSTANDING = "UNDERSTANDING"
+    PLANNING = "PLANNING"
+    READY = "READY"
+    EXECUTING = "EXECUTING"
+    VERIFYING = "VERIFYING"
+    REPLANNING = "REPLANNING"
+    BLOCKED = "BLOCKED"
+    COMPLETED = "COMPLETED"
+    ESCALATED = "ESCALATED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class PlanState(_S):
+    CREATED = "CREATED"
+    DRAFT = "DRAFT"
+    READY = "READY"
+    EXECUTING = "EXECUTING"
+    BLOCKED = "BLOCKED"
+    REPLANNING = "REPLANNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class PlanType(_S):
+    SINGLE_TASK = "SINGLE_TASK"
+    MULTI_TASK = "MULTI_TASK"
+    SEQUENTIAL = "SEQUENTIAL"
+    PARALLEL = "PARALLEL"
+
+
+class InfoState(_S):
+    AVAILABLE_VERIFIED = "AVAILABLE_VERIFIED"
+    AVAILABLE_UNVERIFIED = "AVAILABLE_UNVERIFIED"
+    INCOMPLETE = "INCOMPLETE"
+    STALE = "STALE"
+    CONTRADICTORY = "CONTRADICTORY"
+    MISSING = "MISSING"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
+class Gap(_S):
+    MINOR = "MINOR"
+    MATERIAL = "MATERIAL"
+    CRITICAL = "CRITICAL"
+
+
+class TaskState(_S):
+    PENDING = "PENDING"
+    BLOCKED = "BLOCKED"
+    READY = "READY"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    SKIPPED = "SKIPPED"
+
+
+class Decision(_S):
+    PROCEED = "PROCEED"
+    CONTINUE_INVESTIGATING = "CONTINUE_INVESTIGATING"
+    CLARIFY = "CLARIFY"
+    WAIT = "WAIT"
+    REPLAN = "REPLAN"
+    ESCALATE = "ESCALATE"
+    BLOCK = "BLOCK"
+    COMPLETE = "COMPLETE"
+    COMPLETE_WITH_LIMITATIONS = "COMPLETE_WITH_LIMITATIONS"
+
+
+class Outcome(_S):
+    FULL_COMPLETION = "FULL_COMPLETION"
+    PARTIAL_COMPLETION = "PARTIAL_COMPLETION"
+    BLOCKED = "BLOCKED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    ESCALATED = "ESCALATED"
+
+
+class MissionType(_S):
+    CONVERSATION = "CONVERSATION"
+    EXPLANATION = "EXPLANATION"
+    RESEARCH = "RESEARCH"
+    ANALYSIS = "ANALYSIS"
+    COMPARISON = "COMPARISON"
+    DECISION_SUPPORT = "DECISION_SUPPORT"
+    PLANNING = "PLANNING"
+    CREATION = "CREATION"
+    EXECUTION = "EXECUTION"
+    MONITORING = "MONITORING"
+    DIAGNOSTIC = "DIAGNOSTIC"
+    OTHER = "OTHER"
+
+
+TERMINAL_MISSION = frozenset({MissionState.COMPLETED, MissionState.FAILED, MissionState.CANCELLED})
+OPEN_INFO = frozenset({InfoState.INCOMPLETE, InfoState.STALE, InfoState.CONTRADICTORY,
+                       InfoState.MISSING, InfoState.UNAVAILABLE})
+DONE_TASK = frozenset({TaskState.COMPLETED, TaskState.SKIPPED})
+TERMINAL_TASK = frozenset({TaskState.COMPLETED, TaskState.FAILED, TaskState.CANCELLED, TaskState.SKIPPED})
+
+LEVELS = ("CRITICAL", "HIGH", "NORMAL", "LOW", "BACKGROUND")
+
+
+def lower_level(level: str, steps: int = 1) -> str:
+    try:
+        return LEVELS[min(LEVELS.index(level) + steps, len(LEVELS) - 1)]
+    except ValueError:
+        return "NORMAL"
