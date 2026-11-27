@@ -1,0 +1,14 @@
+# VALE Cloudflare launcher config - batch 15 (optional).
+#
+# Only needed if you deploy wave-pinger.js with the command-line tool
+# (`npx wrangler deploy`) instead of pasting it into the Cloudflare
+# dashboard by hand. If you use the dashboard, you set the same
+# schedule there instead, under the Worker's "Triggers" tab - this file
+# does nothing on its own in that case.
+
+name = "vale-wave-pinger"
+main = "wave-pinger.js"
+compatibility_date = "2026-01-01"
+
+[triggers]
+crons = ["*/15 * * * *"]
