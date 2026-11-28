@@ -1,26 +1,22 @@
 """
-VALE ALPHA - Monitoring Package
+VALE ALPHA - Execution Package
 """
 
-from .execution_monitor import (
-    ExecutionMonitor,
-    ExecutionMonitorConfig,
-    ExecutionMonitorError,
-    ExecutionObservation,
-    MonitoringConfigurationError,
-    MonitoringEvent,
-    MonitoringEventType,
-    TaskTimingRecord,
+from .execution_coordinator import (
+    AlphaExecutionCoordinator,
+    ExecutionCoordinatorConfig,
+    ExecutionCoordinatorError,
+    ExecutionCoordinatorConfigurationError,
+    ExecutionCycleError,
+    ExecutionCycleReport,
 )
 
 
 __all__ = [
-    "ExecutionMonitor",
-    "ExecutionMonitorConfig",
-    "ExecutionMonitorError",
-    "ExecutionObservation",
-    "MonitoringConfigurationError",
-    "MonitoringEvent",
-    "MonitoringEventType",
-    "TaskTimingRecord",
+    "AlphaExecutionCoordinator",
+    "ExecutionCoordinatorConfig",
+    "ExecutionCoordinatorError",
+    "ExecutionCoordinatorConfigurationError",
+    "ExecutionCycleError",
+    "ExecutionCycleReport",
 ]
